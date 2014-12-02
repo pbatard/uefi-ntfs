@@ -1,22 +1,31 @@
-uefi-simple
-===========
+uefi-simple - UEFI development made easy
+========================================
 
-A simple 64bit UEFI application of Hello World! without using any UEFI toolkit.
+A simple 64bit UEFI application of "Hello World!" which can be:
+* compiled on either on Linux or Windows (MinGW-w64).
+* tested without the need for a separate UEFI environment (QEMU + OVMF)
 
-## Preparation
+## Prerequisites
 
-If you use Fedora, you first need to install the mingw cross compiler by the following command.
+* MinGW-w64 (with msys, if running on Windows)
+* QEMU
+* git, wget, unzip
 
-`yum install mingw64-gcc`
+## Sub-Module initialization
 
-If you use a distribution other than Fedora, find a 64bit mingw cross compiler,
-and set its name to "CC" in the Makefile.
+For convenience, the project relies on the gnu-efi library (but __not__ on
+the gnu-efi compiler itself), so you need to initialize the git submodules:
+```
+git submodule init
+git submodule update
+```
 
-## Compile & Run
+## Compilation and testing
 
-Just typing the following command will compile and run the UEFI application on QEMU.
+Issue the following to compile the application and test it in QEMU:
 
 `make qemu`
 
-The Makefile will download the current latest version of UEFI firmware (OVMF-X64-r15214.zip).
-If you can't download it, find the latest version from http://tianocore.sourceforge.net/wiki/OVMF
+The Makefile will download the current version of the EDK2 UEFI firmware and run
+your application against it in an virtual UEFI environment.
+If the download fails, check http://tianocore.sourceforge.net/wiki/OVMF.

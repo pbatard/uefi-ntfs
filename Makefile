@@ -1,27 +1,49 @@
-CC = x86_64-w64-mingw32-gcc
-CFLAGS = -shared -nostdlib -mno-red-zone -fno-stack-protector -Wall \
-         -e EfiMain
+CC      = x86_64-w64-mingw32-gcc
+CFLAGS  = -mno-red-zone -fno-stack-protector -Wshadow -Wall -Wunused -Werror-implicit-function-declaration
+CFLAGS += -I$(GNUEFI_PATH)/inc -I$(GNUEFI_PATH)/inc/x86_64 -I$(GNUEFI_PATH)/inc/protocol
+# Linker option '--subsystem 10' specifies an EFI application. 
+LDFLAGS = -nostdlib -shared -Wl,-dll -Wl,--subsystem,10 -e efi_main 
+LIBS    = -L$(GNUEFI_PATH)/lib -lgcc -lefi
 
+GNUEFI_PATH = $(CURDIR)/gnu-efi
+# Set QEMU according to our platform (and use console mode on Windows)
+ifeq ($(SYSTEMROOT),)
+  QEMU = qemu-system-x86_64 -nographic
+else
+  QEMU = "/c/Program Files/qemu/qemu-system-x86_64w.exe"
+endif
+OVMF_ZIP = OVMF-X64-r15214.zip
+
+
+.PHONY: all
 all: main.efi
 
-%.efi: %.dll
-	objcopy --target=efi-app-x86_64 $< $@
+$(GNUEFI_PATH)/lib/libefi.a:
+	$(MAKE) -C$(GNUEFI_PATH)/lib/
 
-%.dll: %.c
-	$(CC) $(CFLAGS) $< -o $@
+%.efi: %.o $(GNUEFI_PATH)/lib/libefi.a
+	$(CC) $(LDFLAGS) $< -o $@ $(LIBS)
 
-qemu: main.efi OVMF.fd image/EFI/BOOT/BOOTX64.EFI
-	qemu-system-x86_64 -nographic -bios OVMF.fd -hda fat:image
+%.o: %.c
+	$(CC) $(CFLAGS) -ffreestanding -c $<
 
-image/EFI/BOOT/BOOTX64.EFI:
-	mkdir -p image/EFI/BOOT
-	ln -sf ../../../main.efi image/EFI/BOOT/BOOTX64.EFI
+qemu: main.efi OVMF.fd image/efi/boot/bootx64.efi
+	$(QEMU) -bios ./OVMF.fd -hda fat:image
+
+image/efi/boot/bootx64.efi: main.efi
+	mkdir -p image/efi/boot
+	cp -f main.efi $@
 
 OVMF.fd:
-	wget http://downloads.sourceforge.net/project/edk2/OVMF/OVMF-X64-r15214.zip
-	unzip OVMF-X64-r15214.zip OVMF.fd
-	rm OVMF-X64-r15214.zip
+	# Use an explicit FTP mirror, since SF's HTTP download links are more miss than hit...
+	wget ftp://ftp.heanet.ie/pub/download.sourceforge.net/pub/sourceforge/e/ed/edk2/OVMF/$(OVMF_ZIP)
+	unzip $(OVMF_ZIP) OVMF.fd
+	rm $(OVMF_ZIP)
 
 clean:
-	rm -f main.efi OVMF.fd
+	rm -f main.efi *.o
 	rm -rf image
+
+superclean: clean
+	$(MAKE) -C$(GNUEFI_PATH)/lib/ clean
+	rm -f OVMF.fd
