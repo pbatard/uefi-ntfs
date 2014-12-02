@@ -6,11 +6,13 @@ LDFLAGS = -nostdlib -shared -Wl,-dll -Wl,--subsystem,10 -e efi_main
 LIBS    = -L$(GNUEFI_PATH)/lib -lgcc -lefi
 
 GNUEFI_PATH = $(CURDIR)/gnu-efi
-# Set QEMU according to our platform (and use console mode on Windows)
+# Set parameters according to our platform
 ifeq ($(SYSTEMROOT),)
   QEMU = qemu-system-x86_64 -nographic
+  CROSS_COMPILE = x86_64-w64-mingw32-
 else
   QEMU = "/c/Program Files/qemu/qemu-system-x86_64w.exe"
+  CROSS_COMPILE =
 endif
 OVMF_ZIP = OVMF-X64-r15214.zip
 
@@ -19,7 +21,7 @@ OVMF_ZIP = OVMF-X64-r15214.zip
 all: main.efi
 
 $(GNUEFI_PATH)/lib/libefi.a:
-	$(MAKE) -C$(GNUEFI_PATH)/lib/
+	$(MAKE) -C$(GNUEFI_PATH)/lib/ CROSS_COMPILE=$(CROSS_COMPILE)
 
 %.efi: %.o $(GNUEFI_PATH)/lib/libefi.a
 	$(CC) $(LDFLAGS) $< -o $@ $(LIBS)
