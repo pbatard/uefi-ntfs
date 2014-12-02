@@ -18,7 +18,7 @@ OVMF_ZIP = OVMF-X64-r15214.zip
 
 
 .PHONY: all
-all: main.efi
+all: togo.efi
 
 $(GNUEFI_PATH)/lib/libefi.a:
 	$(MAKE) -C$(GNUEFI_PATH)/lib/ CROSS_COMPILE=$(CROSS_COMPILE)
@@ -29,12 +29,12 @@ $(GNUEFI_PATH)/lib/libefi.a:
 %.o: %.c
 	$(CC) $(CFLAGS) -ffreestanding -c $<
 
-qemu: main.efi OVMF.fd image/efi/boot/bootx64.efi
+qemu: togo.efi OVMF.fd image/efi/boot/bootx64.efi
 	$(QEMU) -bios ./OVMF.fd -hda fat:image
 
-image/efi/boot/bootx64.efi: main.efi
+image/efi/boot/bootx64.efi: togo.efi
 	mkdir -p image/efi/boot
-	cp -f main.efi $@
+	cp -f togo.efi $@
 
 OVMF.fd:
 	# Use an explicit FTP mirror, since SF's HTTP download links are more miss than hit...
@@ -43,7 +43,7 @@ OVMF.fd:
 	rm $(OVMF_ZIP)
 
 clean:
-	rm -f main.efi *.o
+	rm -f togo.efi *.o
 	rm -rf image
 
 superclean: clean

@@ -1,9 +1,12 @@
-uefi-simple - UEFI development made easy
-========================================
+uefi-togo - UEFI bootloader for dual MBR/UEFI Windows To Go
+===========================================================
 
-A simple 64bit UEFI application of "Hello World!" which can be:
-* compiled on either on Linux or Windows (MinGW-w64).
-* tested without the need for a separate UEFI environment (QEMU + OVMF)
+This bootloader is used with Rufus, to allow dual MBR+UEFI booting of
+Windows To Go USB drives.  
+
+It is meant to reside on an NTFS+FAT dual partitioned drive, on the FAT
+partition, and load the NTFS EFI driver before handing over to the
+bootx64_efi loader residing there.
 
 ## Prerequisites
 
@@ -22,10 +25,4 @@ git submodule update
 
 ## Compilation and testing
 
-Issue the following to compile the application and test it in QEMU:
-
-`make qemu`
-
-The Makefile will download the current version of the EDK2 UEFI firmware and run
-your application against it in an virtual UEFI environment.
-If the download fails, check http://tianocore.sourceforge.net/wiki/OVMF.
+Run `make`. You can also perform virtual testing by issuing `make qemu`.
