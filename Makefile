@@ -29,12 +29,23 @@ $(GNUEFI_PATH)/lib/libefi.a:
 %.o: %.c
 	$(CC) $(CFLAGS) -ffreestanding -c $<
 
-qemu: togo.efi OVMF.fd image/efi/boot/bootx64.efi
-	$(QEMU) -bios ./OVMF.fd -hda fat:image
+qemu: togo.efi OVMF.fd ntfs.vhd image/efi/boot/bootx64.efi image/efi/boot/ntfs_x64.efi
+	$(QEMU) -bios ./OVMF.fd -hda fat:image -hdb ntfs.vhd
 
 image/efi/boot/bootx64.efi: togo.efi
 	mkdir -p image/efi/boot
 	cp -f togo.efi $@
+
+# NTFS driver
+image/efi/boot/ntfs_x64.efi:
+	wget http://efi.akeo.ie/downloads/efifs-0.6.1/x64/ntfs_x64.efi
+	cp -f ntfs_x64.efi $@
+
+# NTFS test image (contains a bootx64.efi that says "Hello from NTFS!")
+ntfs.vhd:
+	wget http://efi.akeo.ie/test/ntfs.zip
+	unzip ntfs.zip
+	rm ntfs.zip
 
 OVMF.fd:
 	# Use an explicit FTP mirror, since SF's HTTP download links are more miss than hit...
@@ -48,4 +59,4 @@ clean:
 
 superclean: clean
 	$(MAKE) -C$(GNUEFI_PATH)/lib/ clean
-	rm -f OVMF.fd
+	rm -f OVMF.fd ntfs.vhd ntfs_x64.efi

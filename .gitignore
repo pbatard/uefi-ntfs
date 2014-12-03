@@ -1,4 +1,5 @@
 *.o
-main.efi
+*.efi
+*.vhd
 OVMF.fd
 image

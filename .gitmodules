@@ -1,3 +1,4 @@
 [submodule "gnu-efi"]
 	path = gnu-efi
 	url = git://git.code.sf.net/p/gnu-efi/code
+	ignore = dirty
