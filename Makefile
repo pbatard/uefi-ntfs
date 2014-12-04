@@ -2,7 +2,7 @@ CC      = x86_64-w64-mingw32-gcc
 CFLAGS  = -mno-red-zone -fno-stack-protector -Wshadow -Wall -Wunused -Werror-implicit-function-declaration
 CFLAGS += -I$(GNUEFI_PATH)/inc -I$(GNUEFI_PATH)/inc/x86_64 -I$(GNUEFI_PATH)/inc/protocol
 # Linker option '--subsystem 10' specifies an EFI application. 
-LDFLAGS = -nostdlib -shared -Wl,-dll -Wl,--subsystem,10 -e efi_main 
+LDFLAGS = -nostdlib -shared -Wl,-dll -Wl,--subsystem,10 -e EfiMain 
 LIBS    = -L$(GNUEFI_PATH)/lib -lgcc -lefi
 
 GNUEFI_PATH = $(CURDIR)/gnu-efi
@@ -37,8 +37,10 @@ image/efi/boot/bootx64.efi: togo.efi
 	cp -f togo.efi $@
 
 # NTFS driver
-image/efi/boot/ntfs_x64.efi:
+ntfs_x64.efi:
 	wget http://efi.akeo.ie/downloads/efifs-0.6.1/x64/ntfs_x64.efi
+
+image/efi/boot/ntfs_x64.efi: ntfs_x64.efi
 	cp -f ntfs_x64.efi $@
 
 # NTFS test image (contains a bootx64.efi that says "Hello from NTFS!")
