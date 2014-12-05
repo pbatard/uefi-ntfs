@@ -1,8 +1,8 @@
 CC      = x86_64-w64-mingw32-gcc
-CFLAGS  = -mno-red-zone -fno-stack-protector -Wshadow -Wall -Wunused -Werror-implicit-function-declaration
+CFLAGS  = -Os -mno-red-zone -fpic -fshort-wchar -fno-stack-protector -Wshadow -Wall -Wunused -Werror-implicit-function-declaration
 CFLAGS += -I$(GNUEFI_PATH)/inc -I$(GNUEFI_PATH)/inc/x86_64 -I$(GNUEFI_PATH)/inc/protocol
 # Linker option '--subsystem 10' specifies an EFI application. 
-LDFLAGS = -nostdlib -shared -Wl,-dll -Wl,--subsystem,10 -e EfiMain 
+LDFLAGS = -s -nostdlib -shared -Wl,-dll -Wl,--subsystem,10 -e EfiMain 
 LIBS    = -L$(GNUEFI_PATH)/lib -lgcc -lefi
 
 GNUEFI_PATH = $(CURDIR)/gnu-efi
@@ -30,7 +30,7 @@ $(GNUEFI_PATH)/lib/libefi.a:
 	$(CC) $(CFLAGS) -ffreestanding -c $<
 
 qemu: togo.efi OVMF.fd ntfs.vhd image/efi/boot/bootx64.efi image/efi/boot/ntfs_x64.efi
-	$(QEMU) -bios ./OVMF.fd -hda fat:image -hdb ntfs.vhd
+	$(QEMU) -L . -bios OVMF.fd -net none -hda fat:image -hdb ntfs.vhd
 
 image/efi/boot/bootx64.efi: togo.efi
 	mkdir -p image/efi/boot
