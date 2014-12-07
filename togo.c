@@ -27,9 +27,10 @@ EFI_HANDLE EfiImageHandle = NULL;
 // >>> IMPORTANT: THIS MUST BE COMMENTED OUT FOR AN ACTUAL RELEASE <<<
 #define QEMU_DEBUG
 
-// TODO: have 'rufus' in the path, so that we don't accidentaly latch on a user NTFS driver
-static CHAR16* DriverPath = L"efi\\boot\\ntfs_x64.efi";
-static CHAR16* LoaderPath = L"efi\\boot\\bootx64.efi";
+// We use 'rufus' in the driver path, so that we don't accidentaly latch on a user driver
+static CHAR16* DriverPath = L"efi\\rufus\\ntfs_x64.efi";
+// As created by bcdboot.exe - CASE SENSITIVE!!
+static CHAR16* LoaderPath = L"EFI\\Boot\\bootx64.efi";
 
 // Display a human readable error message
 static VOID PrintStatusError(EFI_STATUS Status, const CHAR16 *Format, ...)
@@ -140,6 +141,10 @@ EFI_STATUS EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 
 	Print(L"\n*** Rufus UEFI:TOGO ***\n\n");
 
+#ifdef QEMU_DEBUG
+	Print(L"WARNING: QEMU_DEBUG is ENABLED - This should only be set for QEMU testing!\n\n");
+#endif
+
 	Print(L"Loading NTFS Driver... ");
 	// Enumerate all filesystem handles, to locate our boot partition
 	Status = BS->LocateHandleBuffer(ByProtocol, &FileSystemProtocol, NULL, &NumHandles, &Handle);
@@ -200,17 +205,18 @@ EFI_STATUS EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 			continue;
 		ParentDevicePath = GetParentDevice(DevicePath);
 #ifdef QEMU_DEBUG
-		// Can't easily emulate multipart device on the fly with QEMU, so we hardcode things
+		// We can't easily emulate a multipart device on the fly for testing with QEMU, so we just hardcode things
 		if (i == 3) {
 			SafeFree(ParentDevicePath);
 			break;
 		}
-#endif
+#else
 		if (CompareDevicePaths(USBDiskPath, ParentDevicePath) == 0) {
 			// Bingo!
 			SafeFree(ParentDevicePath);
 			break;
 		}
+#endif
 	}
 
 	if (i >= NumHandles) {

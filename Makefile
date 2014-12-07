@@ -29,7 +29,7 @@ $(GNUEFI_PATH)/lib/libefi.a:
 %.o: %.c
 	$(CC) $(CFLAGS) -ffreestanding -c $<
 
-qemu: togo.efi OVMF.fd ntfs.vhd image/efi/boot/bootx64.efi image/efi/boot/ntfs_x64.efi
+qemu: togo.efi OVMF.fd ntfs.vhd image/efi/boot/bootx64.efi image/efi/rufus/ntfs_x64.efi
 	$(QEMU) -L . -bios OVMF.fd -net none -hda fat:image -hdb ntfs.vhd
 
 image/efi/boot/bootx64.efi: togo.efi
@@ -40,7 +40,8 @@ image/efi/boot/bootx64.efi: togo.efi
 ntfs_x64.efi:
 	wget http://efi.akeo.ie/downloads/efifs-0.6.1/x64/ntfs_x64.efi
 
-image/efi/boot/ntfs_x64.efi: ntfs_x64.efi
+image/efi/rufus/ntfs_x64.efi: ntfs_x64.efi
+	mkdir -p image/efi/rufus
 	cp -f ntfs_x64.efi $@
 
 # NTFS test image (contains a bootx64.efi that says "Hello from NTFS!")
