@@ -1,12 +1,14 @@
 ' Visual Studio QEMU debugging script.
 '
-' I like invoking vbs as much as anyone else, but we need to download and unzip our
-' EFI BIOS file, as well as launch QEMU, and neither Powershell or a standard batch
+' I like invoking vbs as much as anyone else, but we need to download and unzip a
+' bunch of files, as well as launch QEMU, and neither Powershell or a standard batch
 ' can do that without having an extra console appearing.
 '
-' Note: You may get a prompt from the firewall when trying to download the BIOS file
+' Note: You may get a prompt from the firewall when trying to download files
 
-' Modify these variables if needed
+' Modify these variables as needed
+QEMU_PATH  = "C:\Program Files\qemu\"
+QEMU_EXE   = "qemu-system-x86_64w.exe"
 OVMF_ZIP   = "OVMF-X64-r15214.zip"
 OVMF_BIOS  = "OVMF.fd"
 FTP_SERVER = "ftp.heanet.ie"
@@ -66,6 +68,14 @@ Sub Unzip(Archive, File)
   Next
 End Sub
 
+
+' Check that QEMU is available
+If Not fso.FileExists(QEMU_PATH & QEMU_EXE) Then
+  Call WScript.Echo("'" & QEMU_PATH & QEMU_EXE & "' was not found." & vbCrLf &_
+    "Please make sure QEMU is installed or edit the path in '.msvc\debug.vbs'.")
+  Call WScript.Quit(1)
+End If
+
 ' Fetch the Tianocore UEFI BIOS and unzip it
 If Not fso.FileExists(OVMF_BIOS) Then
   Call WScript.Echo("The latest OVMF BIOS file, needed for QEMU/EFI, " &_
@@ -75,6 +85,10 @@ If Not fso.FileExists(OVMF_BIOS) Then
   Call Unzip(OVMF_ZIP, OVMF_BIOS)
   Call fso.DeleteFile(OVMF_ZIP)
 End If
+If Not fso.FileExists(OVMF_BIOS) Then
+  Call WScript.Echo("There was a problem downloading or unzipping the OVMF BIOS file.")
+  Call WScript.Quit(1)
+End If
 
 ' Fetch the NTFS VHD image
 If Not fso.FileExists(VHD_IMG) Then
@@ -82,15 +96,23 @@ If Not fso.FileExists(VHD_IMG) Then
   Call Unzip(VHD_ZIP, VHD_IMG)
   Call fso.DeleteFile(VHD_ZIP)
 End If
+If Not fso.FileExists(VHD_IMG) Then
+  Call WScript.Echo("There was a problem downloading or unzipping the NTFS VHD image.")
+  Call WScript.Quit(1)
+End If
 
 ' Fetch the NTFS EFI driver
 If Not fso.FileExists(DRV) Then
   Call DownloadHttp(DRV_URL, DRV)
 End If
+If Not fso.FileExists(DRV) Then
+  Call WScript.Echo("There was a problem downloading the NTFS EFI driver.")
+  Call WScript.Quit(1)
+End If
 
 ' Copy the files where required, and start QEMU
-Call shell.Run("%COMSPEC% /c mkdir ""image\\efi\\boot""", 0, True)
-Call fso.CopyFile(WScript.Arguments(0), "image\\efi\\boot\\bootx64.efi", True)
-Call shell.Run("%COMSPEC% /c mkdir ""image\\efi\\rufus""", 0, True)
-Call fso.CopyFile(DRV, "image\\efi\\rufus\\" & DRV, True)
-Call shell.Run("""C:\\Program Files\\qemu\\qemu-system-x86_64w.exe"" -L . -bios OVMF.fd -net none -hda fat:image -hdb ntfs.vhd", 1, True)
+Call shell.Run("%COMSPEC% /c mkdir ""image\efi\boot""", 0, True)
+Call fso.CopyFile(WScript.Arguments(0), "image\efi\boot\bootx64.efi", True)
+Call shell.Run("%COMSPEC% /c mkdir ""image\efi\rufus""", 0, True)
+Call fso.CopyFile(DRV, "image\efi\rufus\" & DRV, True)
+Call shell.Run("""" & QEMU_PATH & QEMU_EXE & """ -L . -bios OVMF.fd -net none -hda fat:image -hdb ntfs.vhd", 1, True)

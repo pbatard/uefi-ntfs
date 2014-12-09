@@ -83,7 +83,7 @@ static EFI_DEVICE_PATH* GetParentDevice(const EFI_DEVICE_PATH* DevicePath)
 }
 
 // Compare device paths
-static int CompareDevicePaths(const EFI_DEVICE_PATH *dp1, const EFI_DEVICE_PATH *dp2)
+static INTN CompareDevicePaths(const EFI_DEVICE_PATH *dp1, const EFI_DEVICE_PATH *dp2)
 {
 	if (dp1 == NULL || dp2 == NULL)
 		return -1;
@@ -92,7 +92,7 @@ static int CompareDevicePaths(const EFI_DEVICE_PATH *dp1, const EFI_DEVICE_PATH 
 		UINT8 type1, type2;
 		UINT8 subtype1, subtype2;
 		UINT16 len1, len2;
-		int ret;
+		INTN ret;
 
 		type1 = DevicePathType(dp1);
 		type2 = DevicePathType(dp2);
