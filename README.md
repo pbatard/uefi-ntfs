@@ -34,9 +34,11 @@ works, in conjuction with Rufus, is as follows:
 
 ## Prerequisites
 
-* MinGW-w64 (with msys, if running on Windows)
-* QEMU
-* git, wget, unzip
+* [Visual Studio 2013](http://www.visualstudio.com/products/visual-studio-community-vs)
+  or [MinGW-w64](http://mingw-w64.sourceforge.net/) (with msys, if using MinGW-w64 on Windows)
+* [QEMU](http://www.qemu.org)
+* git
+* wget, unzip, if not using Visual Studio
 
 ## Sub-Module initialization
 
@@ -49,4 +51,7 @@ git submodule update
 
 ## Compilation and testing
 
-Run `make`. You can also perform virtual testing by issuing `make qemu`.
+If using Visual Studio, just press `F5` to have the application compiled and
+launched in the QEMU emulator.
+
+If using MinGW-w64, issue: `make qemu`
