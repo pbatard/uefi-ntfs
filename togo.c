@@ -226,7 +226,6 @@ EFI_STATUS EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		goto out;
 	}
 
-
 	// At this stage, our DevicePath is the partition we are after
 	Print(L"DONE\nLaunching NTFS EFI loader '%s'...\n\n", LoaderPath);
 

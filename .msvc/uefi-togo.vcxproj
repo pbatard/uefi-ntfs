@@ -73,6 +73,7 @@
       <EntryPointSymbol>EfiMain</EntryPointSymbol>
       <SubSystem>EFI Application</SubSystem>
       <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\gnu-efi;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>/IGNORE:4210</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -102,6 +103,7 @@
       <AdditionalDependencies>libcmt.lib;gnu-efi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\gnu-efi;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <LinkStatus>false</LinkStatus>
+      <AdditionalOptions>/IGNORE:4210</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
