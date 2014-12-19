@@ -20,15 +20,18 @@
 #include <efilib.h>
 #include <efistdarg.h>
 
+#define FILE_INFO_SIZE (512 * sizeof(CHAR16))
+
 EFI_GUID EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID = SIMPLE_FILE_SYSTEM_PROTOCOL;
 EFI_HANDLE EfiImageHandle = NULL;
 // NB: FreePool(NULL) is perfectly valid
 #define SafeFree(p) do { FreePool(p); p = NULL;} while(0)
 
-// We use 'rufus' in the driver path, so that we don't accidentaly latch on a user driver
-static CHAR16* DriverPath = L"efi\\rufus\\ntfs_x64.efi";
-// As created by bcdboot.exe - CASE SENSITIVE!!
-static CHAR16* LoaderPath = L"EFI\\Boot\\bootx64.efi";
+// We use 'rufus' in the driver path, so that we don't accidentally latch onto a user driver
+static CHAR16* DriverPath = L"\\efi\\rufus\\ntfs_x64.efi";
+// We'll need to fix the casing as our target is a case sensitive file system and Microsoft
+// indiscriminately seems to uses "EFI\Boot" or "efi\boot"
+static CHAR16* LoaderPath = L"\\efi\\boot\\bootx64.efi";
 
 // Display a human readable error message
 static VOID PrintStatusError(EFI_STATUS Status, const CHAR16 *Format, ...)
@@ -123,13 +126,68 @@ static INTN CompareDevicePaths(const EFI_DEVICE_PATH *dp1, const EFI_DEVICE_PATH
 	return 0;
 }
 
-// Appplication entrypoint
+// Fix the case of a path by looking it up on the file system
+static EFI_STATUS SetPathCase(EFI_FILE_HANDLE Root, CHAR16* Path)
+{
+	EFI_FILE_HANDLE FileHandle = NULL;
+	EFI_FILE_INFO* FileInfo;
+	UINTN i, Len;
+	UINTN Size;
+	EFI_STATUS Status;
+
+	if ((Root == NULL) || (Path == NULL) || (Path[0] != L'\\'))
+		return EFI_INVALID_PARAMETER;
+
+	FileInfo = (EFI_FILE_INFO*)AllocatePool(FILE_INFO_SIZE);
+	if (FileInfo == NULL)
+		return EFI_OUT_OF_RESOURCES;
+
+	Len = StrLen(Path);
+	// Find the last backslash in the path
+	for (i = Len-1; (i != 0) && (Path[i] != L'\\'); i--);
+	
+	if (i != 0) {
+		Path[i] = 0;
+		// Recursively fix the case
+		Status = SetPathCase(Root, Path);
+		if (EFI_ERROR(Status))
+			goto out;
+	}
+
+	Status = Root->Open(Root, &FileHandle, (i==0)?L"\\":Path, EFI_FILE_MODE_READ, 0);
+	if (EFI_ERROR(Status))
+		goto out;
+
+	Status = EFI_NOT_FOUND;
+	do {
+		Size = FILE_INFO_SIZE;
+		Status = FileHandle->Read(FileHandle, &Size, (VOID*)FileInfo);
+		if (EFI_ERROR(Status))
+			goto out;
+		if (StriCmp(&Path[i+1], FileInfo->FileName) == 0) {
+			StrCpy(&Path[i+1], FileInfo->FileName);
+			Status = EFI_SUCCESS;
+			goto out;
+		}
+	} while (FileInfo->FileName[0] != 0);
+
+out:
+	Path[i] = L'\\';
+	if (FileHandle != NULL)
+		FileHandle->Close(FileHandle);
+	FreePool((VOID*)FileInfo);
+	return Status;
+}
+
+// Application entrypoint
 EFI_STATUS EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 {
 	EFI_STATUS Status;
 	EFI_INPUT_KEY Key;
 	EFI_DEVICE_PATH *DevicePath, *ParentDevicePath = NULL, *USBDiskPath = NULL, *BootPartitionPath = NULL;
 	EFI_HANDLE *Handle = NULL, DriverHandle;
+	EFI_FILE_IO_INTERFACE* Volume;
+	EFI_FILE_HANDLE Root;
 	UINTN i, NumHandles;
 
 	EfiImageHandle = ImageHandle;
@@ -140,7 +198,7 @@ EFI_STATUS EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	Print(L"\n*** Rufus UEFI:TOGO ***\n\n");
 
 	Print(L"Loading NTFS Driver... ");
-	// Enumerate all filesystem handles, to locate our boot partition
+	// Enumerate all file system handles, to locate our boot partition
 	Status = BS->LocateHandleBuffer(ByProtocol, &FileSystemProtocol, NULL, &NumHandles, &Handle);
 	if (EFI_ERROR(Status)) {
 		PrintStatusError(Status, L"\n  Failed to list file systems");
@@ -190,7 +248,7 @@ EFI_STATUS EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	}
 
 	// Go through the partitions and find the one that has the USB Disk we booted from
-	// as parent and that isn't the FAT32 boot paritition
+	// as parent and that isn't the FAT32 boot partition
 	for (i = 0; i < NumHandles; i++) {
 		// Note: The Device Path obtained from DevicePathFromHandle() should NOT be freed!
 		DevicePath = DevicePathFromHandle(Handle[i]);
@@ -222,12 +280,38 @@ EFI_STATUS EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	// Calling ConnectController() on a handle starts all the drivers that can service it
 	Status = BS->ConnectController(Handle[i], NULL, NULL, TRUE);
 	if (EFI_ERROR(Status)) {
-		PrintStatusError(Status, L"\n  NTFS partition could not be mounted");
+		PrintStatusError(Status, L"\n  ERROR: NTFS partition could not be mounted");
+		goto out;
+	}
+
+	// Our target file system is case sensitive, so we need to figure out the
+	// case sensitive version of LoaderPath
+	Print(L"DONE\nLooking for NTFS EFI loader... ");
+
+	// Open the the volume
+	Status = BS->HandleProtocol(Handle[i], &FileSystemProtocol, (VOID**)&Volume);
+	if (EFI_ERROR(Status)) {
+		PrintStatusError(Status, L"\n  ERROR: Could not find volume");
+		goto out;
+	}
+
+	// Open the root directory
+	Root = NULL;
+	Status = Volume->OpenVolume(Volume, &Root);
+	if ((EFI_ERROR(Status)) || (Root == NULL)) {
+		PrintStatusError(Status, L"\n  Could not open Root directory");
+		goto out;
+	}
+
+	// This next call will correct the casing to the required one
+	Status = SetPathCase(Root, LoaderPath);
+	if (EFI_ERROR(Status)) {
+		PrintStatusError(Status, L"\n  ERROR: Could not set path");
 		goto out;
 	}
 
 	// At this stage, our DevicePath is the partition we are after
-	Print(L"DONE\nLaunching NTFS EFI loader '%s'...\n\n", LoaderPath);
+	Print(L"DONE\nLaunching NTFS EFI loader '%s'...\n\n", &LoaderPath[1]);
 
 	// Now attempt to chain load bootx64.efi on the NTFS partition
 	DevicePath = FileDevicePath(Handle[i], LoaderPath);
