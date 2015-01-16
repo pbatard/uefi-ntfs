@@ -126,6 +126,22 @@ static INTN CompareDevicePaths(const EFI_DEVICE_PATH *dp1, const EFI_DEVICE_PATH
 	return 0;
 }
 
+// Some UEFI firmwares have a *BROKEN* Unicode collation implementation
+// so we must provide our own version of StriCmp for ASCII comparison...
+static CHAR16 _tolower(CHAR16 c)
+{
+	if(('A' <= c) && (c <= 'Z'))
+		return 'a' + (c - 'A');
+	return c;
+}
+
+static int _StriCmp(CONST CHAR16 *s1, CONST CHAR16 *s2)
+{
+	while ((*s1 != L'\0') && (_tolower(*s1) == _tolower(*s2)))
+		s1++, s2++;
+	return (int)(*s1 - *s2);
+}
+
 // Fix the case of a path by looking it up on the file system
 static EFI_STATUS SetPathCase(EFI_FILE_HANDLE Root, CHAR16* Path)
 {
@@ -164,7 +180,7 @@ static EFI_STATUS SetPathCase(EFI_FILE_HANDLE Root, CHAR16* Path)
 		Status = FileHandle->Read(FileHandle, &Size, (VOID*)FileInfo);
 		if (EFI_ERROR(Status))
 			goto out;
-		if (StriCmp(&Path[i+1], FileInfo->FileName) == 0) {
+		if (_StriCmp(&Path[i+1], FileInfo->FileName) == 0) {
 			StrCpy(&Path[i+1], FileInfo->FileName);
 			Status = EFI_SUCCESS;
 			goto out;
