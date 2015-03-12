@@ -206,7 +206,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\togo.c" />
+    <ClCompile Include="..\boot.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="debug.vbs" />

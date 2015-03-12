@@ -1,5 +1,5 @@
 /*
- * uefi-togo: Windows To Go UEFI/FAT -> UEFI/NTFS chain loader
+ * uefi-ntfs: UEFI/NTFS chain loader
  * Copyright © 2014 Pete Batard <pete@akeo.ie>
  * With parts from GRUB © 2006-2014 Free Software Foundation, Inc.
  *
@@ -222,7 +222,7 @@ EFI_STATUS EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	// Store the system table for future use in other functions
 	ST = SystemTable;
 
-	Print(L"\n*** Rufus UEFI:TOGO ***\n\n");
+	Print(L"\n*** UEFI:NTFS ***\n\n");
 
 	Print(L"Loading NTFS Driver... ");
 	// Enumerate all file system handles, to locate our boot partition

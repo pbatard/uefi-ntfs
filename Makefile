@@ -18,7 +18,7 @@ OVMF_ZIP = OVMF-X64-r15214.zip
 
 
 .PHONY: all
-all: togo.efi
+all: boot.efi
 
 $(GNUEFI_PATH)/lib/libefi.a:
 	$(MAKE) -C$(GNUEFI_PATH)/lib/ CROSS_COMPILE=$(CROSS_COMPILE)
@@ -29,12 +29,12 @@ $(GNUEFI_PATH)/lib/libefi.a:
 %.o: %.c
 	$(CC) $(CFLAGS) -ffreestanding -c $<
 
-qemu: togo.efi OVMF.fd ntfs.vhd image/efi/boot/bootx64.efi image/efi/rufus/ntfs_x64.efi
+qemu: boot.efi OVMF.fd ntfs.vhd image/efi/boot/bootx64.efi image/efi/rufus/ntfs_x64.efi
 	$(QEMU) -L . -bios OVMF.fd -net none -hda fat:image -hdb ntfs.vhd
 
-image/efi/boot/bootx64.efi: togo.efi
+image/efi/boot/bootx64.efi: boot.efi
 	mkdir -p image/efi/boot
-	cp -f togo.efi $@
+	cp -f boot.efi $@
 
 # NTFS driver
 ntfs_x64.efi:
@@ -57,7 +57,7 @@ OVMF.fd:
 	rm $(OVMF_ZIP)
 
 clean:
-	rm -f togo.efi *.o
+	rm -f boot.efi *.o
 	rm -rf image
 
 superclean: clean

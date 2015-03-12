@@ -1,36 +1,32 @@
-UEFI:TOGO - UEFI bootloader for dual MBR/UEFI Windows To Go
-===========================================================
+UEFI:NTFS - Boot an NTFS partition from UEFI
+============================================
 
-This bootloader is intended for use with [Rufus](http://rufus.akeo.ie), to
-allow dual MBR+UEFI booting of Windows To Go USB drives, regardless of
-whether they are fixed or removable, something that no other application
-(that I know of) seems to be able to provide.
+This generic bootloader, which is primarily intended for use with 
+[Rufus](http://rufus.akeo.ie), is meant to allow seamless booting from an EFI
+bootloader, that resides on an NTFS partitions. In other words, UEFI:NTFS is
+designed to remove the UEFI restriction of being able to natively boot from
+FAT32 only, and allow NTFS boot without the need for any user intervention.
 
-The problem is that Windows To Go must reside on an NTFS partition to be
-bootable, and almost no UEFI firmware includes an NTFS driver. This in turn
-constrains the way Windows To Go installations can boot, with
-[Microsoft's official solution](http://technet.microsoft.com/en-ie/library/jj592685.aspx#stg_firmware)
-mandating the use of a fixed disk (which most USB Flash Drives aren't) due
-to Windows' restriction of only ever being able to mount the first partition
-of a removable disk.
+This can be used, for instance, for booting an USB Windows NTFS installation
+media, in EFI mode, allowing support for files that are larger than 4GB
+(something a native EFI FAT32 partition cannot support), or allow
+indiscriminate EFI or BIOS boot of a Windows To Go drives.
 
-There however exists a __better__ solution, that can apply to both removable
-and fixed USB drives, and which is what UEFI:TOGO is all about. The way it
-works, in conjuction with Rufus, is as follows:
+The way this works in conjuction with Rufus is as follows:
 
 * Rufus creates 2 MBR partitions on the target USB disk. The first one is an
-  NTFS partition occupying almost all the drive, with the To Go files, and
-  the second is a very small FAT partition located at the end, containing
-  only an NTFS EFI driver and the UEFI:TOGO EFI bootloader.
-* When the USB drive boots on a BIOS machine, or the user chooses to select
-  legacy mode on UEFI, the MBR bootloader is executed, which hands over to
-  the BIOS-compatible Windows loader on the NTFS partition.
-* When the USB drive boots on an UEFI machine (that doesn't have an NTFS EFI
-  driver in its firmare), the first NTFS partition gets ignored and the
-  bootloader from the second FAT partition, UEFI:TOGO, gets executed
-* UEFI:TOGO then loads an NTFS EFI driver that exists on the FAT partition,
-  opens the NTFS partition and hands over to the Windows To Go EFI
-  bootloader that resides there.
+  NTFS partition occupying almost all the drive, that contains the Windows
+  files (To Go, or regular installation), and the second is a very small FAT
+  partition, located at the very end, that contains an NTFS EFI driver (see
+  http://efi.akeo.ie) and the UEFI:NTFS bootloader.
+* When the USB drive boots in EFI mode, the first NTFS partition gets ignored
+  by the EFI firmware and the UEFI:NTFS bootloader from the bootable FAT partition
+  is executed.
+* UEFI:NTFS then loads the relevant NTFS EFI driver, locates the existing NTFS
+  partition on the same media, and executes the `/efi/boot/bootx64.efi` or 
+  `/efi/boot/bootia32.efi` that resides there. This achieves the exact same
+  outcome as if the EFI firmware had native NTFS support and was able to boot
+  straight from NTFS.
 
 ## Prerequisites
 

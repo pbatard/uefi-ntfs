@@ -14,7 +14,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\togo.c">
+    <ClCompile Include="..\boot.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
