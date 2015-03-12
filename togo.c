@@ -27,11 +27,19 @@ EFI_HANDLE EfiImageHandle = NULL;
 // NB: FreePool(NULL) is perfectly valid
 #define SafeFree(p) do { FreePool(p); p = NULL;} while(0)
 
-// We use 'rufus' in the driver path, so that we don't accidentally latch onto a user driver
-static CHAR16* DriverPath = L"\\efi\\rufus\\ntfs_x64.efi";
+// Use 'rufus' in the driver path, so that we don't accidentally latch onto a user driver
+#if defined(_M_X64)
+  static CHAR16* DriverPath = L"\\efi\\rufus\\ntfs_x64.efi";
+#else
+  static CHAR16* DriverPath = L"\\efi\\rufus\\ntfs_x32.efi";
+#endif
 // We'll need to fix the casing as our target is a case sensitive file system and Microsoft
 // indiscriminately seems to uses "EFI\Boot" or "efi\boot"
-static CHAR16* LoaderPath = L"\\efi\\boot\\bootx64.efi";
+#if defined(_M_X64)
+  static CHAR16* LoaderPath = L"\\efi\\boot\\bootx64.efi";
+#else
+  static CHAR16* LoaderPath = L"\\efi\\boot\\bootia32.efi";
+#endif
 
 // Display a human readable error message
 static VOID PrintStatusError(EFI_STATUS Status, const CHAR16 *Format, ...)
@@ -43,7 +51,7 @@ static VOID PrintStatusError(EFI_STATUS Status, const CHAR16 *Format, ...)
 	va_start(ap, Format);
 	VPrint((CHAR16 *)Format, ap);
 	va_end(ap);
-	Print(L": [%d] %s\n", Status, StatusString); 
+	Print(L": [%d] %s\n", (Status & 0x7FFFFFFF), StatusString); 
 }
 
 // Return the device path node right before the end node
@@ -204,7 +212,10 @@ EFI_STATUS EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	EFI_HANDLE *Handle = NULL, DriverHandle;
 	EFI_FILE_IO_INTERFACE* Volume;
 	EFI_FILE_HANDLE Root;
+	EFI_BLOCK_IO* BlockIo;
+	CHAR8 *Buffer, NTFSMagic[] = { 'N', 'T', 'F', 'S', ' ', ' ', ' ', ' '};
 	UINTN i, NumHandles;
+	BOOLEAN SameDevice, NTFSPartition;
 
 	EfiImageHandle = ImageHandle;
 	InitializeLib(ImageHandle, SystemTable);
@@ -254,7 +265,7 @@ EFI_STATUS EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		Status = EFI_NOT_FOUND;
 		goto out;
 	}
-	Print(L"DONE\nLocating NTFS partition on this device... ");
+	Print(L"DONE\nLocating the first NTFS partition on this device... ");
 
 	// Now enumerate all disk handles
 	Status = BS->LocateHandleBuffer(ByProtocol, &DiskIoProtocol, NULL, &NumHandles, &Handle);
@@ -271,20 +282,31 @@ EFI_STATUS EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		// Eliminate the partition we booted from
 		if (CompareDevicePaths(DevicePath, BootPartitionPath) == 0)
 			continue;
+		// Ensure that we look for the NTFS partition on the same device.
 		ParentDevicePath = GetParentDevice(DevicePath);
-#ifdef _DEBUG
-		// We can't easily emulate a multipart device on the fly for testing with QEMU, so we just hardcode things
-		if (i == 3) {
-			SafeFree(ParentDevicePath);
-			break;
-		}
-#else
-		if (CompareDevicePaths(USBDiskPath, ParentDevicePath) == 0) {
-			// Bingo!
-			SafeFree(ParentDevicePath);
-			break;
-		}
+		SameDevice = (CompareDevicePaths(USBDiskPath, ParentDevicePath) == 0);
+		SafeFree(ParentDevicePath);
+		// The check breaks QEMU testing (since we can't easily emulate
+		// a multipart device on the fly) so only do it for release.
+#if !defined(_DEBUG)
+		if (!SameDevice)
+			continue;
 #endif
+		// Read the first block of the partition and look for the NTFS magic in the OEM ID
+		Status = BS->OpenProtocol(Handle[i], &BlockIoProtocol, (VOID**) &BlockIo, 
+			EfiImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
+		if (EFI_ERROR(Status))
+			continue;
+		Buffer = (CHAR8*)AllocatePool(BlockIo->Media->BlockSize);
+		if (Buffer == NULL)
+			continue;
+		Status = BlockIo->ReadBlocks(BlockIo, BlockIo->Media->MediaId, 0, BlockIo->Media->BlockSize, Buffer);
+		NTFSPartition = (CompareMem(&Buffer[3], NTFSMagic, sizeof(NTFSMagic)) == 0);
+		FreePool(Buffer);
+		if (EFI_ERROR(Status))
+			continue;
+		if (NTFSPartition)
+			break;
 	}
 
 	if (i >= NumHandles) {
