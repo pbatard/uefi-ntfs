@@ -1,7 +1,7 @@
 /*
  * uefi-ntfs: UEFI/NTFS chain loader
- * Copyright © 2014 Pete Batard <pete@akeo.ie>
- * With parts from GRUB © 2006-2014 Free Software Foundation, Inc.
+ * Copyright © 2014-2015 Pete Batard <pete@akeo.ie>
+ * With parts from GRUB © 2006-2015 Free Software Foundation, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,14 +28,14 @@ EFI_HANDLE EfiImageHandle = NULL;
 #define SafeFree(p) do { FreePool(p); p = NULL;} while(0)
 
 // Use 'rufus' in the driver path, so that we don't accidentally latch onto a user driver
-#if defined(_M_X64)
+#if defined(_M_X64) || defined(__x86_64__)
   static CHAR16* DriverPath = L"\\efi\\rufus\\ntfs_x64.efi";
 #else
   static CHAR16* DriverPath = L"\\efi\\rufus\\ntfs_x32.efi";
 #endif
 // We'll need to fix the casing as our target is a case sensitive file system and Microsoft
 // indiscriminately seems to uses "EFI\Boot" or "efi\boot"
-#if defined(_M_X64)
+#if defined(_M_X64) || defined(__x86_64__)
   static CHAR16* LoaderPath = L"\\efi\\boot\\bootx64.efi";
 #else
   static CHAR16* LoaderPath = L"\\efi\\boot\\bootia32.efi";

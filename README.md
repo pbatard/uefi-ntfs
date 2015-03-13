@@ -1,5 +1,5 @@
-UEFI:NTFS - Boot an NTFS partition from UEFI
-============================================
+UEFI:NTFS - Boot NTFS partitions from EFI
+=========================================
 
 This generic bootloader, which is primarily intended for use with 
 [Rufus](http://rufus.akeo.ie), is meant to allow seamless booting from an EFI
@@ -10,7 +10,7 @@ FAT32 only, and allow NTFS boot without the need for any user intervention.
 This can be used, for instance, for booting an USB Windows NTFS installation
 media, in EFI mode, allowing support for files that are larger than 4GB
 (something a native EFI FAT32 partition cannot support), or allow
-indiscriminate EFI or BIOS boot of a Windows To Go drives.
+indiscriminate EFI or BIOS boot of Windows To Go drives.
 
 The way this works in conjuction with Rufus is as follows:
 
