@@ -9,16 +9,37 @@
 ' Modify these variables as needed
 QEMU_PATH  = "C:\Program Files\qemu\"
 QEMU_EXE   = "qemu-system-x86_64w.exe"
-OVMF_ZIP   = "OVMF-X64-r15214.zip"
-OVMF_BIOS  = "OVMF.fd"
 FTP_SERVER = "ftp.heanet.ie"
+FTP_DIR    = "pub/download.sourceforge.net/pub/sourceforge/e/ed/edk2/OVMF/"
+' Set to True if you need to download a file that might be cached locally
+NO_CACHE   = False
+
+' You shouldn't have to mofify anything below this
+CONF       = WScript.Arguments(0)
+BIN        = WScript.Arguments(1)
+TARGET     = WScript.Arguments(2)
+
+If (TARGET = "x86") Then
+  OVMF_ZIP  = "OVMF-IA32-r15214.zip"
+  OVMF_BIOS = "OVMF_x86_32.fd"
+  BOOT_NAME = "bootia32.efi"
+  DRV_EXT   = "x32"
+ElseIf (TARGET = "x64") Then
+  OVMF_ZIP  = "OVMF-X64-r15214.zip"
+  OVMF_BIOS = "OVMF_x86_64.fd"
+  BOOT_NAME = "bootx64.efi"
+  DRV_EXT   = "x64"
+Else
+  MsgBox("Unknown target: " & TARGET)
+  Call WScript.Quit(1)
+End If
 FTP_FILE   = "pub/download.sourceforge.net/pub/sourceforge/e/ed/edk2/OVMF/" & OVMF_ZIP
 FTP_URL    = "ftp://" & FTP_SERVER & "/" & FTP_FILE
 VHD_ZIP    = "ntfs.zip"
 VHD_IMG    = "ntfs.vhd"
 VHD_URL    = "http://efi.akeo.ie/test/" & VHD_ZIP
-DRV        = "ntfs_x64.efi"
-DRV_URL    = "http://efi.akeo.ie/downloads/efifs-0.6.1/x64/" & DRV
+DRV        = "ntfs_" & DRV_EXT & ".efi"
+DRV_URL    = "http://efi.akeo.ie/downloads/efifs-0.7/" & DRV_EXT & "/" & DRV
 
 ' Globals
 Set fso = CreateObject("Scripting.FileSystemObject") 
@@ -42,6 +63,11 @@ Sub DownloadHttp(Url, File)
   Set xHttp = createobject("Microsoft.XMLHTTP")
   Set bStrm = createobject("Adodb.Stream")
   Call xHttp.Open("GET", Url, False)
+  If NO_CACHE = True Then
+    Call xHttp.SetRequestHeader("If-None-Match", "some-random-string")
+    Call xHttp.SetRequestHeader("Cache-Control", "no-cache,max-age=0")
+    Call xHttp.SetRequestHeader("Pragma", "no-cache")
+  End If
   Call xHttp.Send()
   With bStrm
     .type = BINARY
@@ -82,7 +108,8 @@ If Not fso.FileExists(OVMF_BIOS) Then
    "will be downloaded from: " & FTP_URL & vbCrLf & vbCrLf &_
    "Note: Unless you delete the file, this should only happen once.")
   Call DownloadFtp(FTP_SERVER, FTP_FILE)
-  Call Unzip(OVMF_ZIP, OVMF_BIOS)
+  Call Unzip(OVMF_ZIP, "OVMF.fd")
+  Call fso.MoveFile("OVMF.fd", OVMF_BIOS)
   Call fso.DeleteFile(OVMF_ZIP)
 End If
 If Not fso.FileExists(OVMF_BIOS) Then
@@ -112,7 +139,7 @@ End If
 
 ' Copy the files where required, and start QEMU
 Call shell.Run("%COMSPEC% /c mkdir ""image\efi\boot""", 0, True)
-Call fso.CopyFile(WScript.Arguments(0), "image\efi\boot\bootx64.efi", True)
+Call fso.CopyFile(BIN, "image\efi\boot\" & BOOT_NAME, True)
 Call shell.Run("%COMSPEC% /c mkdir ""image\efi\rufus""", 0, True)
 Call fso.CopyFile(DRV, "image\efi\rufus\" & DRV, True)
-Call shell.Run("""" & QEMU_PATH & QEMU_EXE & """ -L . -bios OVMF.fd -net none -hda fat:image -hdb ntfs.vhd", 1, True)
+Call shell.Run("""" & QEMU_PATH & QEMU_EXE & """ -L . -bios " & OVMF_BIOS & " -net none -hda fat:image -hdb ntfs.vhd", 1, True)

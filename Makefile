@@ -48,7 +48,7 @@ image/efi/boot/bootx64.efi: boot.efi
 
 # NTFS driver
 ntfs_x64.efi:
-	wget http://efi.akeo.ie/downloads/efifs-0.6.1/x64/ntfs_x64.efi
+	wget http://efi.akeo.ie/downloads/efifs-0.7/x64/ntfs_x64.efi
 
 image/efi/rufus/ntfs_x64.efi: ntfs_x64.efi
 	mkdir -p image/efi/rufus

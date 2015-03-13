@@ -103,11 +103,12 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\gnu-efi\inc\protocol;$(SolutionDir)\gnu-efi\lib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\ia32;$(SolutionDir)\gnu-efi\inc\protocol;$(SolutionDir)\gnu-efi\lib</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_UNICODE;UNICODE;_MSC_EXTENSIONS;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -141,7 +142,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\x86_64;$(SolutionDir)\gnu-efi\inc\protocol;$(SolutionDir)\gnu-efi\lib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\gnu-efi\inc;$(SolutionDir)\gnu-efi\inc\ia32;$(SolutionDir)\gnu-efi\inc\protocol;$(SolutionDir)\gnu-efi\lib</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_UNICODE;UNICODE;_MSC_EXTENSIONS;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
