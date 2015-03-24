@@ -12,20 +12,21 @@ media, in EFI mode, allowing support for files that are larger than 4GB
 (something a native EFI FAT32 partition cannot support), or allow
 indiscriminate EFI or BIOS boot of Windows To Go drives.
 
-The way this works in conjuction with Rufus is as follows:
+The way this works, in conjuction with Rufus, is as follows:
 
-* Rufus creates 2 MBR partitions on the target USB disk. The first one is an
-  NTFS partition occupying almost all the drive, that contains the Windows
-  files (To Go, or regular installation), and the second is a very small FAT
-  partition, located at the very end, that contains an NTFS EFI driver (see
-  http://efi.akeo.ie) and the UEFI:NTFS bootloader.
+* Rufus creates 2 partitions on the target USB disk (these can be MBR or GPT
+  partitions). The first one is an NTFS partition occupying almost all the
+  drive, that contains the Windows files (for Windows To Go, or for regular
+  installation), and the second is a very small FAT partition, located at the
+  very end, that contains an NTFS EFI driver (see http://efi.akeo.ie) as well
+  as the UEFI:NTFS bootloader.
 * When the USB drive boots in EFI mode, the first NTFS partition gets ignored
   by the EFI firmware and the UEFI:NTFS bootloader from the bootable FAT partition
   is executed.
 * UEFI:NTFS then loads the relevant NTFS EFI driver, locates the existing NTFS
   partition on the same media, and executes the `/efi/boot/bootx64.efi` or 
   `/efi/boot/bootia32.efi` that resides there. This achieves the exact same
-  outcome as if the EFI firmware had native NTFS support and was able to boot
+  outcome as if the EFI firmware had native NTFS support and could boot 
   straight from NTFS.
 
 ## Prerequisites
