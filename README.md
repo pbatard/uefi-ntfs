@@ -52,3 +52,14 @@ If using Visual Studio, just press `F5` to have the application compiled and
 launched in the QEMU emulator.
 
 If using MinGW-w64, issue: `make qemu`
+
+## Download and installation
+
+You can find a ready-to-use FAT partition image (256KB), containing both the 32
+and 64 bit versions of the UEFI:NTFS loader and driver in the Rufus project,
+under [/res/uefi](https://github.com/pbatard/rufus/tree/master/res/uefi).
+
+If you create a 256KB partition at the end of your drive and copy
+[`uefi-ntfs.img`](https://github.com/pbatard/rufus/blob/master/res/uefi/uefi-ntfs.img?raw=true)
+there (in DD mode of course), then you should have everything you need to make
+the first NTFS partition on that drive UEFI bootable.
