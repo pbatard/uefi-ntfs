@@ -31,7 +31,7 @@ The way this works, in conjuction with Rufus, is as follows:
 
 ## Prerequisites
 
-* [Visual Studio 2013](http://www.visualstudio.com/products/visual-studio-community-vs)
+* [Visual Studio 2015](http://www.visualstudio.com/products/visual-studio-community-vs)
   or [MinGW-w64](http://mingw-w64.sourceforge.net/) (with msys, if using MinGW-w64 on Windows)
 * [QEMU](http://www.qemu.org)
 * git
