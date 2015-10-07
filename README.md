@@ -12,7 +12,7 @@ media, in EFI mode, allowing support for files that are larger than 4GB
 (something a native EFI FAT32 partition cannot support), or allow
 indiscriminate EFI or BIOS boot of Windows To Go drives.
 
-The way this works, in conjuction with Rufus, is as follows:
+The way this works, in conjunction with Rufus, is as follows:
 
 * Rufus creates 2 partitions on the target USB disk (these can be MBR or GPT
   partitions). The first one is an NTFS partition occupying almost all the
