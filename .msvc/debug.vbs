@@ -42,7 +42,7 @@ DRV        = "ntfs_" & DRV_EXT & ".efi"
 DRV_URL    = "http://efi.akeo.ie/downloads/efifs-0.7/" & DRV_EXT & "/" & DRV
 
 ' Globals
-Set fso = CreateObject("Scripting.FileSystemObject") 
+Set fso = CreateObject("Scripting.FileSystemObject")
 Set shell = CreateObject("WScript.Shell")
 
 ' Download a file from FTP

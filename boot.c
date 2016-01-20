@@ -1,6 +1,6 @@
 /*
  * uefi-ntfs: UEFI/NTFS chain loader
- * Copyright © 2014-2015 Pete Batard <pete@akeo.ie>
+ * Copyright © 2014-2016 Pete Batard <pete@akeo.ie>
  * With parts from GRUB © 2006-2015 Free Software Foundation, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -40,6 +40,12 @@ EFI_HANDLE EfiImageHandle = NULL;
 #else
   static CHAR16* LoaderPath = L"\\efi\\boot\\bootia32.efi";
 #endif
+// Always good to know if we're actually running 32 or 64 bit
+#if defined(_M_X64) || defined(__x86_64__)
+  static CHAR16* Arch = L"64";
+#else
+  static CHAR16* Arch = L"32";
+#endif
 
 // Display a human readable error message
 static VOID PrintStatusError(EFI_STATUS Status, const CHAR16 *Format, ...)
@@ -51,7 +57,7 @@ static VOID PrintStatusError(EFI_STATUS Status, const CHAR16 *Format, ...)
 	va_start(ap, Format);
 	VPrint((CHAR16 *)Format, ap);
 	va_end(ap);
-	Print(L": [%d] %s\n", (Status & 0x7FFFFFFF), StatusString); 
+	Print(L": [%d] %s\n", (Status & 0x7FFFFFFF), StatusString);
 }
 
 // Return the device path node right before the end node
@@ -169,7 +175,7 @@ static EFI_STATUS SetPathCase(EFI_FILE_HANDLE Root, CHAR16* Path)
 	Len = StrLen(Path);
 	// Find the last backslash in the path
 	for (i = Len-1; (i != 0) && (Path[i] != L'\\'); i--);
-	
+
 	if (i != 0) {
 		Path[i] = 0;
 		// Recursively fix the case
@@ -182,7 +188,6 @@ static EFI_STATUS SetPathCase(EFI_FILE_HANDLE Root, CHAR16* Path)
 	if (EFI_ERROR(Status))
 		goto out;
 
-	Status = EFI_NOT_FOUND;
 	do {
 		Size = FILE_INFO_SIZE;
 		Status = FileHandle->Read(FileHandle, &Size, (VOID*)FileInfo);
@@ -193,6 +198,7 @@ static EFI_STATUS SetPathCase(EFI_FILE_HANDLE Root, CHAR16* Path)
 			Status = EFI_SUCCESS;
 			goto out;
 		}
+		Status = EFI_NOT_FOUND;
 	} while (FileInfo->FileName[0] != 0);
 
 out:
@@ -222,7 +228,7 @@ EFI_STATUS EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	// Store the system table for future use in other functions
 	ST = SystemTable;
 
-	Print(L"\n*** UEFI:NTFS ***\n\n");
+	Print(L"\n*** UEFI:NTFS (%s-bit) ***\n\n", Arch);
 
 	Print(L"Loading NTFS Driver... ");
 	// Enumerate all file system handles, to locate our boot partition
@@ -259,7 +265,7 @@ EFI_STATUS EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		break;
 	}
 	SafeFree(Handle);
-	
+
 	if (i >= NumHandles) {
 		Print(L"\n  Failed to locate driver. Please check that '%s' exists on the FAT partition", DriverPath);
 		Status = EFI_NOT_FOUND;
@@ -293,7 +299,7 @@ EFI_STATUS EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 			continue;
 #endif
 		// Read the first block of the partition and look for the NTFS magic in the OEM ID
-		Status = BS->OpenProtocol(Handle[i], &BlockIoProtocol, (VOID**) &BlockIo, 
+		Status = BS->OpenProtocol(Handle[i], &BlockIoProtocol, (VOID**) &BlockIo,
 			EfiImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
 		if (EFI_ERROR(Status))
 			continue;
@@ -344,7 +350,7 @@ EFI_STATUS EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	// This next call will correct the casing to the required one
 	Status = SetPathCase(Root, LoaderPath);
 	if (EFI_ERROR(Status)) {
-		PrintStatusError(Status, L"\n  ERROR: Could not set path");
+		PrintStatusError(Status, L"\n  ERROR: Could not locate '%s'", LoaderPath);
 		goto out;
 	}
 
