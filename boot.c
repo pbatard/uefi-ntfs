@@ -321,19 +321,36 @@ EFI_STATUS EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		goto out;
 	}
 
-	// Calling ConnectController() on a handle starts all the drivers that can service it
-	Status = BS->ConnectController(Handle[i], NULL, NULL, TRUE);
-	if (EFI_ERROR(Status)) {
-		PrintStatusError(Status, L"\n  ERROR: NTFS partition could not be mounted");
+	Print(L"DONE\nFind if partition is already serviced by an NTFS driver... ");
+	// Test for presence of file system protocol (to see if there already is
+	// an NTFS driver servicing this partition)
+	Status = BS->OpenProtocol(Handle[i], &FileSystemProtocol, (VOID**)&Volume,
+		EfiImageHandle, NULL, EFI_OPEN_PROTOCOL_TEST_PROTOCOL);
+	if (Status == EFI_SUCCESS) {
+		// An NTFS driver is already set => no need to start ours
+		Print(L"YES\n");
+	} else if (Status == EFI_UNSUPPORTED) {
+		// Partition is not being serviced by a file system driver yet => start ours
+		Print(L"NO\nStarting NTFS service for partition... ");
+		// Calling ConnectController() on a handle starts all the drivers that can service it
+		Status = BS->ConnectController(Handle[i], NULL, NULL, TRUE);
+		if (EFI_ERROR(Status)) {
+			PrintStatusError(Status, L"\n  ERROR: Could not start NTFS service");
+			goto out;
+		}
+		Print(L"DONE\n");
+	} else {
+		PrintStatusError(Status, L"\n  ERROR: Could not check for NTFS service");
 		goto out;
 	}
 
 	// Our target file system is case sensitive, so we need to figure out the
 	// case sensitive version of LoaderPath
-	Print(L"DONE\nLooking for NTFS EFI loader... ");
+	Print(L"Looking for NTFS EFI loader... ");
 
 	// Open the the volume
-	Status = BS->HandleProtocol(Handle[i], &FileSystemProtocol, (VOID**)&Volume);
+	Status = BS->OpenProtocol(Handle[i], &FileSystemProtocol, (VOID**)&Volume,
+		EfiImageHandle, NULL, EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
 	if (EFI_ERROR(Status)) {
 		PrintStatusError(Status, L"\n  ERROR: Could not find volume");
 		goto out;
