@@ -9,8 +9,8 @@
 ' Modify these variables as needed
 QEMU_PATH  = "C:\Program Files\qemu\"
 QEMU_EXE   = "qemu-system-x86_64w.exe"
-FTP_SERVER = "ftp.heanet.ie"
-FTP_DIR    = "pub/download.sourceforge.net/pub/sourceforge/e/ed/edk2/OVMF/"
+OVMF_DIR   = "http://efi.akeo.ie/OVMF/"
+OVMF_REV   = "r15214"
 ' Set to True if you need to download a file that might be cached locally
 NO_CACHE   = False
 
@@ -20,12 +20,12 @@ BIN        = WScript.Arguments(1)
 TARGET     = WScript.Arguments(2)
 
 If (TARGET = "x86") Then
-  OVMF_ZIP  = "OVMF-IA32-r15214.zip"
+  OVMF_ZIP  = "OVMF-IA32-" & OVMF_REV & ".zip"
   OVMF_BIOS = "OVMF_x86_32.fd"
   BOOT_NAME = "bootia32.efi"
   DRV_EXT   = "x32"
 ElseIf (TARGET = "x64") Then
-  OVMF_ZIP  = "OVMF-X64-r15214.zip"
+  OVMF_ZIP  = "OVMF-X64-" & OVMF_REV & ".zip"
   OVMF_BIOS = "OVMF_x86_64.fd"
   BOOT_NAME = "bootx64.efi"
   DRV_EXT   = "x64"
@@ -33,8 +33,7 @@ Else
   MsgBox("Unknown target: " & TARGET)
   Call WScript.Quit(1)
 End If
-FTP_FILE   = "pub/download.sourceforge.net/pub/sourceforge/e/ed/edk2/OVMF/" & OVMF_ZIP
-FTP_URL    = "ftp://" & FTP_SERVER & "/" & FTP_FILE
+OVMF_URL   = OVMF_DIR & OVMF_ZIP
 VHD_ZIP    = "ntfs.zip"
 VHD_IMG    = "ntfs.vhd"
 VHD_URL    = "http://efi.akeo.ie/test/" & VHD_ZIP
@@ -105,15 +104,21 @@ End If
 ' Fetch the Tianocore UEFI BIOS and unzip it
 If Not fso.FileExists(OVMF_BIOS) Then
   Call WScript.Echo("The latest OVMF BIOS file, needed for QEMU/EFI, " &_
-   "will be downloaded from: " & FTP_URL & vbCrLf & vbCrLf &_
+   "will be downloaded from: " & OVMF_URL & vbCrLf & vbCrLf &_
    "Note: Unless you delete the file, this should only happen once.")
-  Call DownloadFtp(FTP_SERVER, FTP_FILE)
+  Call DownloadHttp(OVMF_URL, OVMF_ZIP)
+End If
+If Not fso.FileExists(OVMF_ZIP) And Not fso.FileExists(OVMF_BIOS) Then
+  Call WScript.Echo("There was a problem downloading the OVMF BIOS file.")
+  Call WScript.Quit(1)
+End If
+If fso.FileExists(OVMF_ZIP) Then
   Call Unzip(OVMF_ZIP, "OVMF.fd")
   Call fso.MoveFile("OVMF.fd", OVMF_BIOS)
   Call fso.DeleteFile(OVMF_ZIP)
 End If
 If Not fso.FileExists(OVMF_BIOS) Then
-  Call WScript.Echo("There was a problem downloading or unzipping the OVMF BIOS file.")
+  Call WScript.Echo("There was a problem unzipping the OVMF BIOS file.")
   Call WScript.Quit(1)
 End If
 
