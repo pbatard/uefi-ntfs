@@ -220,7 +220,7 @@ EFI_STATUS EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	EFI_FILE_HANDLE Root;
 	EFI_BLOCK_IO* BlockIo;
 	CHAR8 *Buffer, NTFSMagic[] = { 'N', 'T', 'F', 'S', ' ', ' ', ' ', ' '};
-	UINTN i, NumHandles;
+	UINTN h, NumHandles = 0;
 	BOOLEAN SameDevice, NTFSPartition;
 
 	EfiImageHandle = ImageHandle;
@@ -238,9 +238,9 @@ EFI_STATUS EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		goto out;
 	}
 
-	for (i = 0; i < NumHandles; i++) {
+	for (h = 0; h < NumHandles; h++) {
 		// Look for our NTFS driver. Note: the path MUST be specified using backslashes!
-		DevicePath = FileDevicePath(Handle[i], DriverPath);
+		DevicePath = FileDevicePath(Handle[h], DriverPath);
 		if (DevicePath == NULL)
 			continue;
 
@@ -259,14 +259,14 @@ EFI_STATUS EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 
 		// Keep track of our boot partition as well as the parent disk as we need these
 		// to locate the NTFS partition on the same device
-		BootPartitionPath = DevicePathFromHandle(Handle[i]);
+		BootPartitionPath = DevicePathFromHandle(Handle[h]);
 		USBDiskPath = GetParentDevice(BootPartitionPath);
 
 		break;
 	}
 	SafeFree(Handle);
 
-	if (i >= NumHandles) {
+	if (h >= NumHandles) {
 		Print(L"\n  Failed to locate driver. Please check that '%s' exists on the FAT partition", DriverPath);
 		Status = EFI_NOT_FOUND;
 		goto out;
@@ -282,9 +282,9 @@ EFI_STATUS EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 
 	// Go through the partitions and find the one that has the USB Disk we booted from
 	// as parent and that isn't the FAT32 boot partition
-	for (i = 0; i < NumHandles; i++) {
+	for (h = 0; h < NumHandles; h++) {
 		// Note: The Device Path obtained from DevicePathFromHandle() should NOT be freed!
-		DevicePath = DevicePathFromHandle(Handle[i]);
+		DevicePath = DevicePathFromHandle(Handle[h]);
 		// Eliminate the partition we booted from
 		if (CompareDevicePaths(DevicePath, BootPartitionPath) == 0)
 			continue;
@@ -299,7 +299,7 @@ EFI_STATUS EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 			continue;
 #endif
 		// Read the first block of the partition and look for the NTFS magic in the OEM ID
-		Status = BS->OpenProtocol(Handle[i], &BlockIoProtocol, (VOID**) &BlockIo,
+		Status = BS->OpenProtocol(Handle[h], &BlockIoProtocol, (VOID**) &BlockIo,
 			EfiImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
 		if (EFI_ERROR(Status))
 			continue;
@@ -315,7 +315,7 @@ EFI_STATUS EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 			break;
 	}
 
-	if (i >= NumHandles) {
+	if (h >= NumHandles) {
 		Print(L"\n  ERROR: NTFS partition was not found.\n");
 		Status = EFI_NOT_FOUND;
 		goto out;
@@ -324,7 +324,7 @@ EFI_STATUS EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	Print(L"DONE\nFind if partition is already serviced by an NTFS driver... ");
 	// Test for presence of file system protocol (to see if there already is
 	// an NTFS driver servicing this partition)
-	Status = BS->OpenProtocol(Handle[i], &FileSystemProtocol, (VOID**)&Volume,
+	Status = BS->OpenProtocol(Handle[h], &FileSystemProtocol, (VOID**)&Volume,
 		EfiImageHandle, NULL, EFI_OPEN_PROTOCOL_TEST_PROTOCOL);
 	if (Status == EFI_SUCCESS) {
 		// An NTFS driver is already set => no need to start ours
@@ -333,7 +333,7 @@ EFI_STATUS EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		// Partition is not being serviced by a file system driver yet => start ours
 		Print(L"NO\nStarting NTFS service for partition... ");
 		// Calling ConnectController() on a handle starts all the drivers that can service it
-		Status = BS->ConnectController(Handle[i], NULL, NULL, TRUE);
+		Status = BS->ConnectController(Handle[h], NULL, NULL, TRUE);
 		if (EFI_ERROR(Status)) {
 			PrintStatusError(Status, L"\n  ERROR: Could not start NTFS service");
 			goto out;
@@ -348,11 +348,15 @@ EFI_STATUS EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	// case sensitive version of LoaderPath
 	Print(L"Looking for NTFS EFI loader... ");
 
+	// Add a one second delay before we start poking at the NTFS content, in
+	// case the system is slow to start our service...
+	BS->Stall(1000000);
+
 	// Open the the volume
-	Status = BS->OpenProtocol(Handle[i], &FileSystemProtocol, (VOID**)&Volume,
+	Status = BS->OpenProtocol(Handle[h], &FileSystemProtocol, (VOID**)&Volume,
 		EfiImageHandle, NULL, EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
 	if (EFI_ERROR(Status)) {
-		PrintStatusError(Status, L"\n  ERROR: Could not find volume");
+		PrintStatusError(Status, L"\n  ERROR: Could not open NTFS volume");
 		goto out;
 	}
 
@@ -375,7 +379,7 @@ EFI_STATUS EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	Print(L"DONE\nLaunching NTFS EFI loader '%s'...\n\n", &LoaderPath[1]);
 
 	// Now attempt to chain load bootx64.efi on the NTFS partition
-	DevicePath = FileDevicePath(Handle[i], LoaderPath);
+	DevicePath = FileDevicePath(Handle[h], LoaderPath);
 	if (DevicePath == NULL) {
 		Print(L"  ERROR: Failed to create path\n");
 		goto out;
