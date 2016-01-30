@@ -20,7 +20,9 @@
 #include <efilib.h>
 #include <efistdarg.h>
 
-#define FILE_INFO_SIZE (512 * sizeof(CHAR16))
+#define FILE_INFO_SIZE  (512 * sizeof(CHAR16))
+#define NUM_RETRIES     1
+#define DELAY           3	// delay before retry, in seconds
 
 EFI_GUID EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID = SIMPLE_FILE_SYSTEM_PROTOCOL;
 EFI_HANDLE EfiImageHandle = NULL;
@@ -220,7 +222,7 @@ EFI_STATUS EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	EFI_FILE_HANDLE Root;
 	EFI_BLOCK_IO* BlockIo;
 	CHAR8 *Buffer, NTFSMagic[] = { 'N', 'T', 'F', 'S', ' ', ' ', ' ', ' '};
-	UINTN h, NumHandles = 0;
+	UINTN i, h, NumHandles = 0;
 	BOOLEAN SameDevice, NTFSPartition;
 
 	EfiImageHandle = ImageHandle;
@@ -230,7 +232,7 @@ EFI_STATUS EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 
 	Print(L"\n*** UEFI:NTFS (%s-bit) ***\n\n", Arch);
 
-	Print(L"Loading NTFS Driver... ");
+	Print(L"Loading NTFS driver... ");
 	// Enumerate all file system handles, to locate our boot partition
 	Status = BS->LocateHandleBuffer(ByProtocol, &FileSystemProtocol, NULL, &NumHandles, &Handle);
 	if (EFI_ERROR(Status)) {
@@ -321,17 +323,17 @@ EFI_STATUS EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		goto out;
 	}
 
-	Print(L"DONE\nFind if partition is already serviced by an NTFS driver... ");
+	Print(L"DONE\nCheck if partition needs the NTFS driver service... ");
 	// Test for presence of file system protocol (to see if there already is
 	// an NTFS driver servicing this partition)
 	Status = BS->OpenProtocol(Handle[h], &FileSystemProtocol, (VOID**)&Volume,
 		EfiImageHandle, NULL, EFI_OPEN_PROTOCOL_TEST_PROTOCOL);
 	if (Status == EFI_SUCCESS) {
 		// An NTFS driver is already set => no need to start ours
-		Print(L"YES\n");
+		Print(L"NOPE\n");
 	} else if (Status == EFI_UNSUPPORTED) {
 		// Partition is not being serviced by a file system driver yet => start ours
-		Print(L"NO\nStarting NTFS service for partition... ");
+		Print(L"DONE\nStarting NTFS driver service... ");
 		// Calling ConnectController() on a handle starts all the drivers that can service it
 		Status = BS->ConnectController(Handle[h], NULL, NULL, TRUE);
 		if (EFI_ERROR(Status)) {
@@ -346,18 +348,21 @@ EFI_STATUS EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 
 	// Our target file system is case sensitive, so we need to figure out the
 	// case sensitive version of LoaderPath
-	Print(L"Looking for NTFS EFI loader... ");
 
-	// Add a one second delay before we start poking at the NTFS content, in
-	// case the system is slow to start our service...
-	BS->Stall(1000000);
-
-	// Open the the volume
-	Status = BS->OpenProtocol(Handle[h], &FileSystemProtocol, (VOID**)&Volume,
-		EfiImageHandle, NULL, EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
-	if (EFI_ERROR(Status)) {
+	// Open the the volume, with retry, as we may need to wait before poking
+	// at the NTFS content, in case the system is slow to start our service...
+	for (i = 0; ; i++) {
+		Print(L"Looking for NTFS EFI loader... ");
+		Status = BS->OpenProtocol(Handle[h], &FileSystemProtocol, (VOID**)&Volume,
+			EfiImageHandle, NULL, EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
+		if (!EFI_ERROR(Status))
+			break;
 		PrintStatusError(Status, L"\n  ERROR: Could not open NTFS volume");
-		goto out;
+		if (i >= NUM_RETRIES)
+			goto out;
+		Print(L"  Waiting %d seconds before retrying... ", DELAY);
+		BS->Stall(DELAY * 1000000);
+		Print(L"DONE\n");
 	}
 
 	// Open the root directory
