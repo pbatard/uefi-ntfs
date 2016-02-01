@@ -20,25 +20,25 @@ BIN        = WScript.Arguments(1)
 TARGET     = WScript.Arguments(2)
 
 If (TARGET = "x86") Then
+  ARCH_EXT  = "x86_32"
+  UEFI_EXT  = "ia32"
   OVMF_ZIP  = "OVMF-IA32-" & OVMF_REV & ".zip"
-  OVMF_BIOS = "OVMF_x86_32.fd"
-  BOOT_NAME = "bootia32.efi"
-  DRV_EXT   = "x32"
 ElseIf (TARGET = "x64") Then
+  ARCH_EXT  = "x86_64"
+  UEFI_EXT  = "x64"
   OVMF_ZIP  = "OVMF-X64-" & OVMF_REV & ".zip"
-  OVMF_BIOS = "OVMF_x86_64.fd"
-  BOOT_NAME = "bootx64.efi"
-  DRV_EXT   = "x64"
 Else
   MsgBox("Unknown target: " & TARGET)
   Call WScript.Quit(1)
 End If
+BOOT_NAME  = "boot" & UEFI_EXT & ".efi"
+OVMF_BIOS  = "OVMF_" & ARCH_EXT & ".fd"
 OVMF_URL   = OVMF_DIR & OVMF_ZIP
 VHD_ZIP    = "ntfs.zip"
 VHD_IMG    = "ntfs.vhd"
 VHD_URL    = "http://efi.akeo.ie/test/" & VHD_ZIP
-DRV        = "ntfs_" & DRV_EXT & ".efi"
-DRV_URL    = "http://efi.akeo.ie/downloads/efifs-0.7/" & DRV_EXT & "/" & DRV
+DRV        = "ntfs_" & UEFI_EXT & ".efi"
+DRV_URL    = "http://efi.akeo.ie/downloads/efifs-0.8/" & ARCH_EXT & "/" & DRV
 
 ' Globals
 Set fso = CreateObject("Scripting.FileSystemObject")

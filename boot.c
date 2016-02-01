@@ -33,7 +33,7 @@ EFI_HANDLE EfiImageHandle = NULL;
 #if defined(_M_X64) || defined(__x86_64__)
   static CHAR16* DriverPath = L"\\efi\\rufus\\ntfs_x64.efi";
 #else
-  static CHAR16* DriverPath = L"\\efi\\rufus\\ntfs_x32.efi";
+  static CHAR16* DriverPath = L"\\efi\\rufus\\ntfs_ia32.efi";
 #endif
 // We'll need to fix the casing as our target is a case sensitive file system and Microsoft
 // indiscriminately seems to uses "EFI\Boot" or "efi\boot"

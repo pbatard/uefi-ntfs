@@ -48,7 +48,7 @@ image/efi/boot/bootx64.efi: boot.efi
 
 # NTFS driver
 ntfs_x64.efi:
-	wget http://efi.akeo.ie/downloads/efifs-0.7/x64/ntfs_x64.efi
+	wget http://efi.akeo.ie/downloads/efifs-0.8/x86_64/ntfs_x64.efi
 
 image/efi/rufus/ntfs_x64.efi: ntfs_x64.efi
 	mkdir -p image/efi/rufus
@@ -62,7 +62,7 @@ ntfs.vhd:
 
 OVMF.fd:
 	# Use an explicit FTP mirror, since SF's HTTP download links are more miss than hit...
-	wget ftp://ftp.heanet.ie/pub/download.sourceforge.net/pub/sourceforge/e/ed/edk2/OVMF/$(OVMF_ZIP)
+	wget http://efi.akeo.ie/OVMF/$(OVMF_ZIP)
 	unzip $(OVMF_ZIP) OVMF.fd
 	rm $(OVMF_ZIP)
 
