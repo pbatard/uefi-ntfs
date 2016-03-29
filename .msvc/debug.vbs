@@ -8,7 +8,6 @@
 
 ' Modify these variables as needed
 QEMU_PATH  = "C:\Program Files\qemu\"
-QEMU_EXE   = "qemu-system-x86_64w.exe"
 OVMF_DIR   = "http://efi.akeo.ie/OVMF/"
 OVMF_REV   = "r15214"
 ' Set to True if you need to download a file that might be cached locally
@@ -20,25 +19,26 @@ BIN        = WScript.Arguments(1)
 TARGET     = WScript.Arguments(2)
 
 If (TARGET = "x86") Then
-  ARCH_EXT  = "x86_32"
   UEFI_EXT  = "ia32"
-  OVMF_ZIP  = "OVMF-IA32-" & OVMF_REV & ".zip"
+  QEMU_ARCH = "i386"
 ElseIf (TARGET = "x64") Then
-  ARCH_EXT  = "x86_64"
   UEFI_EXT  = "x64"
-  OVMF_ZIP  = "OVMF-X64-" & OVMF_REV & ".zip"
+  QEMU_ARCH = "x86_64"
 Else
-  MsgBox("Unknown target: " & TARGET)
+  MsgBox("Unsupported debug target: " & TARGET)
   Call WScript.Quit(1)
 End If
 BOOT_NAME  = "boot" & UEFI_EXT & ".efi"
-OVMF_BIOS  = "OVMF_" & ARCH_EXT & ".fd"
+OVMF_ARCH  = UCase(UEFI_EXT)
+OVMF_ZIP   = "OVMF-" & OVMF_ARCH & "-" & OVMF_REV & ".zip"
+OVMF_BIOS  = "OVMF_" & OVMF_ARCH & ".fd"
 OVMF_URL   = OVMF_DIR & OVMF_ZIP
+QEMU_EXE   = "qemu-system-" & QEMU_ARCH & "w.exe"
 VHD_ZIP    = "ntfs.zip"
 VHD_IMG    = "ntfs.vhd"
 VHD_URL    = "http://efi.akeo.ie/test/" & VHD_ZIP
 DRV        = "ntfs_" & UEFI_EXT & ".efi"
-DRV_URL    = "http://efi.akeo.ie/downloads/efifs-0.8/" & ARCH_EXT & "/" & DRV
+DRV_URL    = "http://efi.akeo.ie/downloads/efifs-0.8/" & UEFI_EXT & "/" & DRV
 
 ' Globals
 Set fso = CreateObject("Scripting.FileSystemObject")

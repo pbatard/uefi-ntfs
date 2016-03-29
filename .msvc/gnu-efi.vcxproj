@@ -178,6 +178,18 @@
     <ClCompile Include="..\gnu-efi\lib\guid.c" />
     <ClCompile Include="..\gnu-efi\lib\hand.c" />
     <ClCompile Include="..\gnu-efi\lib\hw.c" />
+    <ClCompile Include="..\gnu-efi\lib\ia32\initplat.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\gnu-efi\lib\ia32\math.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\gnu-efi\lib\init.c" />
     <ClCompile Include="..\gnu-efi\lib\lock.c" />
     <ClCompile Include="..\gnu-efi\lib\misc.c" />
@@ -190,12 +202,18 @@
     <ClCompile Include="..\gnu-efi\lib\smbios.c" />
     <ClCompile Include="..\gnu-efi\lib\sread.c" />
     <ClCompile Include="..\gnu-efi\lib\str.c" />
-    <ClCompile Include="..\gnu-efi\lib\x86_64\callwrap.c" />
-    <ClCompile Include="..\gnu-efi\lib\x86_64\initplat.c" />
-    <ClCompile Include="..\gnu-efi\lib\x86_64\math.c" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\gnu-efi\lib\x86_64\efi_stub.S" />
+    <ClCompile Include="..\gnu-efi\lib\x86_64\initplat.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\gnu-efi\lib\x86_64\math.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

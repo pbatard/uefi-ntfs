@@ -32,7 +32,8 @@ The way this works, in conjunction with Rufus, is as follows:
 ## Prerequisites
 
 * [Visual Studio 2015](http://www.visualstudio.com/products/visual-studio-community-vs)
-  or [MinGW-w64](http://mingw-w64.sourceforge.net/) (with msys, if using MinGW-w64 on Windows)
+  or [MinGW](http://www.mingw.org/)/[MinGW64](http://mingw-w64.sourceforge.net/)
+  (preferbaly installed using [msys2](https://sourceforge.net/projects/msys2/))
 * [QEMU](http://www.qemu.org)
 * git
 * wget, unzip, if not using Visual Studio
@@ -51,7 +52,11 @@ git submodule update
 If using Visual Studio, just press `F5` to have the application compiled and
 launched in the QEMU emulator.
 
-If using MinGW-w64, issue: `make qemu`
+If using MinGW, issue: `make TARGET=<arch>` where `<arch>` is one of `ia32`
+or `x64`. You can also debug through QEMU with MinGW by adding `qemu` to your
+`make` invocation. Be mindful however that this turns the special `_DEBUG`
+mode on, and you should run make without invoking `qemu` to produce proper
+release binaries.
 
 ## Download and installation
 

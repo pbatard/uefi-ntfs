@@ -300,6 +300,8 @@ EFI_STATUS EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 #if !defined(_DEBUG)
 		if (!SameDevice)
 			continue;
+#else
+		(void)SameDevice;	// Silence a MinGW warning
 #endif
 		// Read the first block of the partition and look for the NTFS magic in the OEM ID
 		Status = BS->OpenProtocol(Handle[h], &BlockIoProtocol, (VOID**) &BlockIo,

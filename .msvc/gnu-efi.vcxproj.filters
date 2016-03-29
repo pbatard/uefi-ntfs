@@ -9,6 +9,12 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
+    <Filter Include="Source Files\ia32">
+      <UniqueIdentifier>{b917a657-a544-470b-ae93-c21190d2aab4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\x86_64">
+      <UniqueIdentifier>{a17d2644-7736-4278-bb88-72daa0ccb6f3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\gnu-efi\lib\console.c">
@@ -80,22 +86,20 @@
     <ClCompile Include="..\gnu-efi\lib\runtime\rtdata.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\gnu-efi\lib\x86_64\callwrap.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\gnu-efi\lib\x86_64\initplat.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\gnu-efi\lib\error.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\gnu-efi\lib\x86_64\math.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\gnu-efi\lib\x86_64\initplat.c">
+      <Filter>Source Files\x86_64</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\gnu-efi\lib\x86_64\efi_stub.S">
-      <Filter>Source Files</Filter>
-    </None>
+    <ClCompile Include="..\gnu-efi\lib\x86_64\math.c">
+      <Filter>Source Files\x86_64</Filter>
+    </ClCompile>
+    <ClCompile Include="..\gnu-efi\lib\ia32\initplat.c">
+      <Filter>Source Files\ia32</Filter>
+    </ClCompile>
+    <ClCompile Include="..\gnu-efi\lib\ia32\math.c">
+      <Filter>Source Files\ia32</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
