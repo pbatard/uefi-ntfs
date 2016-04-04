@@ -15,6 +15,9 @@
     <Filter Include="Source Files\x86_64">
       <UniqueIdentifier>{a17d2644-7736-4278-bb88-72daa0ccb6f3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\arm">
+      <UniqueIdentifier>{99d9c063-e0d2-48d9-8b71-feb4082eddc4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\gnu-efi\lib\console.c">
@@ -100,6 +103,12 @@
     </ClCompile>
     <ClCompile Include="..\gnu-efi\lib\ia32\math.c">
       <Filter>Source Files\ia32</Filter>
+    </ClCompile>
+    <ClCompile Include="..\gnu-efi\lib\arm\initplat.c">
+      <Filter>Source Files\arm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\gnu-efi\lib\arm\math.c">
+      <Filter>Source Files\arm</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

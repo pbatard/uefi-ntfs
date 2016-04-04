@@ -4,6 +4,9 @@
 *.sdf
 *.suo
 *.opensdf
-x64
-OVMF.fd
+*.opendb
+*.fd
+arm
+x86_64
+x86_32
 image
