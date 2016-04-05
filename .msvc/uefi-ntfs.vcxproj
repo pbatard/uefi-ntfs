@@ -146,6 +146,8 @@
       <CompileAs>CompileAsC</CompileAs>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
     </ClCompile>
     <Lib>
       <SubSystem>EFI Application</SubSystem>
@@ -154,7 +156,7 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
     <Link>
-      <AdditionalDependencies>libcmtd.lib;libucrtd.lib;libvcruntimed.lib;gnu-efi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gnu-efi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>false</DataExecutionPrevention>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
@@ -173,6 +175,8 @@
       <CompileAs>CompileAsC</CompileAs>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
     </ClCompile>
     <Lib>
       <SubSystem>EFI Application</SubSystem>
@@ -181,7 +185,7 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
     <Link>
-      <AdditionalDependencies>libcmtd.lib;libucrtd.lib;libvcruntimed.lib;gnu-efi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gnu-efi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>false</DataExecutionPrevention>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
@@ -200,6 +204,8 @@
       <CompileAs>CompileAsC</CompileAs>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
     </ClCompile>
     <Lib>
       <SubSystem>EFI Application</SubSystem>
@@ -208,7 +214,7 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
     <Link>
-      <AdditionalDependencies>libcmtd.lib;libucrtd.lib;libvcruntimed.lib;advapi32.lib;gnu-efi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libcmtd.lib;gnu-efi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <RandomizedBaseAddress>
       </RandomizedBaseAddress>
       <DataExecutionPrevention>false</DataExecutionPrevention>
@@ -226,9 +232,8 @@
       <PreprocessorDefinitions>_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
-      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
-      <Optimization>MinSpace</Optimization>
       <WarningLevel>Level3</WarningLevel>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
     </ClCompile>
     <Lib>
       <SubSystem>EFI Application</SubSystem>
@@ -244,11 +249,11 @@
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
       <EntryPointSymbol>EfiMain</EntryPointSymbol>
       <SubSystem>EFI Application</SubSystem>
-      <AdditionalDependencies>libcmt.lib;libucrt.lib;libvcruntime.lib;gnu-efi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gnu-efi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)x86_64\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <LinkStatus>false</LinkStatus>
       <AdditionalOptions>/IGNORE:4210</AdditionalOptions>
       <OptimizeReferences>true</OptimizeReferences>
+      <LinkStatus>false</LinkStatus>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -257,9 +262,8 @@
       <PreprocessorDefinitions>_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
-      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
-      <Optimization>MinSpace</Optimization>
       <WarningLevel>Level3</WarningLevel>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
     </ClCompile>
     <Lib>
       <SubSystem>EFI Application</SubSystem>
@@ -275,11 +279,11 @@
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
       <EntryPointSymbol>EfiMain</EntryPointSymbol>
       <SubSystem>EFI Application</SubSystem>
-      <AdditionalDependencies>libcmt.lib;libucrt.lib;libvcruntime.lib;gnu-efi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gnu-efi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)x86_32\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <LinkStatus>false</LinkStatus>
       <AdditionalOptions>/IGNORE:4210</AdditionalOptions>
       <OptimizeReferences>true</OptimizeReferences>
+      <LinkStatus>false</LinkStatus>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
@@ -288,9 +292,8 @@
       <PreprocessorDefinitions>_UNICODE;UNICODE;HAVE_USE_MS_ABI;GNU_EFI_USE_EXTERNAL_STDARG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <CompileAs>CompileAsC</CompileAs>
-      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
-      <Optimization>MinSpace</Optimization>
       <WarningLevel>Level3</WarningLevel>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
     </ClCompile>
     <Lib>
       <SubSystem>EFI Application</SubSystem>
@@ -307,11 +310,11 @@
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
       <EntryPointSymbol>EfiMain</EntryPointSymbol>
       <SubSystem>EFI Application</SubSystem>
-      <AdditionalDependencies>libcmt.lib;libucrt.lib;libvcruntime.lib;gnu-efi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libcmt.lib;gnu-efi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)arm\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <LinkStatus>false</LinkStatus>
       <AdditionalOptions>/IGNORE:4210</AdditionalOptions>
       <OptimizeReferences>true</OptimizeReferences>
+      <LinkStatus>false</LinkStatus>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
