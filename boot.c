@@ -235,13 +235,13 @@ static CHAR16* GetDriverName(CONST EFI_HANDLE DriverHandle)
 	// Try EFI_COMPONENT_NAME2 protocol first
 	if ( (BS->OpenProtocol(DriverHandle, &ComponentName2Protocol, (VOID**)&ComponentName2,
 			EfiImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL) == EFI_SUCCESS) &&
-		 (ComponentName2->GetDriverName(ComponentName2, "", &DriverName) == EFI_SUCCESS) )
+		 (ComponentName2->GetDriverName(ComponentName2, (CHAR8*)"", &DriverName) == EFI_SUCCESS) )
 		return DriverName;
 
 	// Fallback to EFI_COMPONENT_NAME if that didn't work
 	if ( (BS->OpenProtocol(DriverHandle, &ComponentNameProtocol, (VOID**)&ComponentName,
 			EfiImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL) == EFI_SUCCESS) &&
-		 (ComponentName->GetDriverName(ComponentName, "", &DriverName) == EFI_SUCCESS) )
+		 (ComponentName->GetDriverName(ComponentName, (CHAR8*)"", &DriverName) == EFI_SUCCESS) )
 		return DriverName;
 
 	return L"(unknown driver)";
