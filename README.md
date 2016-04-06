@@ -68,3 +68,14 @@ If you create a 256KB partition at the end of your drive and copy
 [`uefi-ntfs.img`](https://github.com/pbatard/rufus/blob/master/res/uefi/uefi-ntfs.img?raw=true)
 there (in DD mode of course), then you should have everything you need to make
 the first NTFS partition on that drive UEFI bootable.
+
+## Visual Studio and ARM support
+
+To enable ARM compilation in Visual Studio 2015, you must perform the following:
+* Make sure Visual Studio is fully closed.
+* Navigate to `C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V140\Platforms\ARM` and
+  remove the read-only attribute on `Platform.Common.props`.
+* With a text editor __running with Administrative privileges__ open:  
+  `C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V140\Platforms\ARM\Platform.Common.props`.
+* Under the `<PropertyGroup>` section add the following:  
+  `<WindowsSDKDesktopARMSupport>true</WindowsSDKDesktopARMSupport>`

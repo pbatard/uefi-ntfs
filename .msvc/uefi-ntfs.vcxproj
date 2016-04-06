@@ -155,13 +155,13 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
     <Link>
-      <AdditionalDependencies>gnu-efi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gnu-efi.lib;libcmtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>false</DataExecutionPrevention>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
       <EntryPointSymbol>EfiMain</EntryPointSymbol>
       <SubSystem>EFI Application</SubSystem>
-      <AdditionalLibraryDirectories>$(SolutionDir)x86_64\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>/IGNORE:4210</AdditionalOptions>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
@@ -184,13 +184,13 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
     <Link>
-      <AdditionalDependencies>gnu-efi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gnu-efi.lib;libcmtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>false</DataExecutionPrevention>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
       <EntryPointSymbol>EfiMain</EntryPointSymbol>
       <SubSystem>EFI Application</SubSystem>
-      <AdditionalLibraryDirectories>$(SolutionDir)x86_32\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>/IGNORE:4210</AdditionalOptions>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
@@ -213,14 +213,14 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
     <Link>
-      <AdditionalDependencies>libcmtd.lib;gnu-efi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gnu-efi.lib;libcmtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <RandomizedBaseAddress>
       </RandomizedBaseAddress>
       <DataExecutionPrevention>false</DataExecutionPrevention>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
       <EntryPointSymbol>EfiMain</EntryPointSymbol>
       <SubSystem>EFI Application</SubSystem>
-      <AdditionalLibraryDirectories>$(SolutionDir)arm\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>/IGNORE:4210</AdditionalOptions>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
@@ -248,8 +248,8 @@
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
       <EntryPointSymbol>EfiMain</EntryPointSymbol>
       <SubSystem>EFI Application</SubSystem>
-      <AdditionalDependencies>gnu-efi.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)x86_64\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>gnu-efi.lib;libcmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>/IGNORE:4210</AdditionalOptions>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
@@ -277,8 +277,8 @@
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
       <EntryPointSymbol>EfiMain</EntryPointSymbol>
       <SubSystem>EFI Application</SubSystem>
-      <AdditionalDependencies>gnu-efi.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)x86_32\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>gnu-efi.lib;libcmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>/IGNORE:4210</AdditionalOptions>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
@@ -307,8 +307,8 @@
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
       <EntryPointSymbol>EfiMain</EntryPointSymbol>
       <SubSystem>EFI Application</SubSystem>
-      <AdditionalDependencies>libcmt.lib;gnu-efi.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)arm\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>gnu-efi.lib;libcmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>/IGNORE:4210</AdditionalOptions>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
