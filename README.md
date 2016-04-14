@@ -33,7 +33,7 @@ The way this works, in conjunction with Rufus, is as follows:
 
 * [Visual Studio 2015](http://www.visualstudio.com/products/visual-studio-community-vs)
   or [MinGW](http://www.mingw.org/)/[MinGW64](http://mingw-w64.sourceforge.net/)
-  (preferbaly installed using [msys2](https://sourceforge.net/projects/msys2/))
+  (preferably installed using [msys2](https://sourceforge.net/projects/msys2/))
 * [QEMU](http://www.qemu.org)
 * git
 * wget, unzip, if not using Visual Studio

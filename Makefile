@@ -1,35 +1,32 @@
-TARGET = x64
+TARGET    = x64
+SUBSYSTEM = 10  # 10 = EFI application
 
 ifeq ($(TARGET),x64)
 	ARCH          = x86_64
-	CROSS_COMPILE = x86_64-w64-mingw32-
-	OVMF_ARCH     = X64
-	QEMU_ARCH     = x86_64
 	GCC_ARCH      = x86_64
+	QEMU_ARCH     = x86_64
+	CROSS_COMPILE = $(GCC_ARCH)-w64-mingw32-
 	EP_PREFIX     =
 	CFLAGS        = -m64 -mno-red-zone
-	# Linker option '--subsystem 10' specifies an EFI application. 
-	LDFLAGS	      = -Wl,-dll -Wl,--subsystem,10 -nostdlib
+	LDFLAGS	      = -Wl,-dll -Wl,--subsystem,$(SUBSYSTEM) -nostdlib
 else ifeq ($(TARGET),ia32)
 	ARCH          = ia32
-	CROSS_COMPILE = i686-w64-mingw32-
-	OVMF_ARCH     = IA32
-	QEMU_ARCH     = i386
 	GCC_ARCH      = i686
+	QEMU_ARCH     = i386
+	CROSS_COMPILE = $(GCC_ARCH)-w64-mingw32-
 	EP_PREFIX     = _
 	CFLAGS       = -m32 -mno-red-zone
 	# Can't use -nostdlib as we're missing an implementation of __umoddi3
 	# and __udivdi3, required by ia32/math.c and present in libgcc.a
-	LDFLAGS	      = -Wl,-dll -Wl,--subsystem,10
+	LDFLAGS	      = -Wl,-dll -Wl,--subsystem,$(SUBSYSTEM)
 else ifeq ($(TARGET),arm)
 	ARCH          = arm
-	CROSS_COMPILE = arm-linux-gnueabihf-
-	OVMF_ARCH     = ARM
-	QEMU_ARCH     = arm
 	GCC_ARCH      = arm
+	QEMU_ARCH     = arm
+	CROSS_COMPILE = $(GCC_ARCH)-linux-gnueabihf-
 	EP_PREFIX     =
-	CFLAGS        = -marm -fpic -fshort-wchar -nostdlib
-	LDFLAGS       = -Wl,--no-wchar-size-warning
+	CFLAGS        = -marm -fpic -fshort-wchar
+	LDFLAGS       = -Wl,--no-wchar-size-warning -Wl,--subsystem,$(SUBSYSTEM) -nostdlib
 endif
 
 # Set parameters according to our platform
@@ -39,6 +36,7 @@ else
   QEMU = "/c/Program Files/qemu/qemu-system-$(QEMU_ARCH)w.exe"
   CROSS_COMPILE =
 endif
+OVMF_ARCH   = $(shell echo $(TARGET) | tr a-z A-Z)
 GNUEFI_PATH = $(CURDIR)/gnu-efi
 
 CC     := $(CROSS_COMPILE)gcc
@@ -69,17 +67,19 @@ ifneq ($(GCC_ARCH),$(findstring $(GCC_ARCH), $(GCCMACHINE)))
 endif
 
 
-.PHONY: all
+.PHONY: all clean superclean
 all: boot.efi
 
 $(GNUEFI_PATH)/$(ARCH)/lib/libefi.a:
 	$(MAKE) -C$(GNUEFI_PATH) CROSS_COMPILE=$(CROSS_COMPILE) ARCH=$(ARCH) lib
 
 %.efi: %.o $(GNUEFI_PATH)/$(ARCH)/lib/libefi.a
-	$(CC) $(LDFLAGS) $< -o $@ $(LIBS)
+	@echo  [LD]  $(notdir $@)
+	@$(CC) $(LDFLAGS) $< -o $@ $(LIBS)
 
 %.o: %.c
-	$(CC) $(CFLAGS) -ffreestanding -c $<
+	@echo  [CC]  $(notdir $@)
+	@$(CC) $(CFLAGS) -ffreestanding -c $<
 
 qemu: CFLAGS += -D_DEBUG
 qemu: boot.efi OVMF_$(OVMF_ARCH).fd ntfs.vhd image/efi/boot/boot$(TARGET).efi image/efi/rufus/ntfs_$(TARGET).efi
