@@ -52,11 +52,14 @@ git submodule update
 If using Visual Studio, just press `F5` to have the application compiled and
 launched in the QEMU emulator.
 
-If using MinGW, issue: `make TARGET=<arch>` where `<arch>` is one of `ia32`
-or `x64`. You can also debug through QEMU with MinGW by adding `qemu` to your
-`make` invocation. Be mindful however that this turns the special `_DEBUG`
-mode on, and you should run make without invoking `qemu` to produce proper
-release binaries.
+If using gcc, you should be able to simply issue `make`. If needed you can also
+issue something like `make ARCH=<arch> CROSS_COMPILE=<tuple>` where `<arch>` is
+one of `ia32`, `x64` or `arm` and tuple is the one for your cross-compiler (e.g.
+`arm-linux-gnueabihf-`).
+
+You can also debug through QEMU by specifying `qemu` to your `make` invocation.
+Be mindful however that this turns the special `_DEBUG` mode on, and you should
+run make without invoking `qemu` to produce proper release binaries.
 
 ## Download and installation
 
