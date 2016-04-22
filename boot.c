@@ -51,11 +51,11 @@ EFI_HANDLE EfiImageHandle = NULL;
 #endif
 // Always good to know the arch we're running
 #if defined(_M_X64) || defined(__x86_64__)
-  static CHAR16* Arch = L"x86_64";
+  static CHAR16* Arch = L"x64";
 #elif defined(_M_IX86) || defined(__i386__)
-  static CHAR16* Arch = L"x86_32";
+  static CHAR16* Arch = L"ia32";
 #elif defined (_M_ARM) || defined(__arm__)
-  static CHAR16* Arch = L"ARM";
+  static CHAR16* Arch = L"arm";
 #endif
 
 /*
@@ -320,8 +320,9 @@ static VOID DisconnectBlockingDrivers(VOID) {
 
 /*
  * Application entry-point
+ * NB: This must be set to 'efi_main' for gnu-efi crt0 compatibility
  */
-EFI_STATUS EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
+EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 {
 	EFI_LOADED_IMAGE *LoadedImage;
 	EFI_STATUS Status;
