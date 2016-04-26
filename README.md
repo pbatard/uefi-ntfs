@@ -1,16 +1,16 @@
-UEFI:NTFS - Boot NTFS partitions from EFI
-=========================================
+UEFI:NTFS - Boot NTFS partitions from UEFI
+==========================================
 
-This generic bootloader, which is primarily intended for use with 
-[Rufus](http://rufus.akeo.ie), is meant to allow seamless booting from an EFI
-bootloader, that resides on an NTFS partitions. In other words, UEFI:NTFS is
+This generic bootloader (which is primarily intended for use with [Rufus](https://rufus.akeo.ie)
+but can also be used independently), is meant to allow seamless boot from an
+EFI bootloader, that resides on an NTFS partition. In other words, UEFI:NTFS is
 designed to remove the UEFI restriction of being able to natively boot from
 FAT32 only, and allow NTFS boot without the need for any user intervention.
 
-This can be used, for instance, for booting an USB Windows NTFS installation
-media, in EFI mode, allowing support for files that are larger than 4GB
-(something a native EFI FAT32 partition cannot support), or allow
-indiscriminate EFI or BIOS boot of Windows To Go drives.
+This can be used, for instance, for booting a Windows NTFS installation media,
+in UEFI mode, thus allowing support for files that are larger than 4GB
+(something a native UEFI FAT32 partition cannot support), or allow
+indiscriminate BIOS+UEFI boot of Windows To Go drives.
 
 The way this works, in conjunction with Rufus, is as follows:
 
@@ -18,22 +18,23 @@ The way this works, in conjunction with Rufus, is as follows:
   partitions). The first one is an NTFS partition occupying almost all the
   drive, that contains the Windows files (for Windows To Go, or for regular
   installation), and the second is a very small FAT partition, located at the
-  very end, that contains an NTFS EFI driver (see http://efi.akeo.ie) as well
+  very end, that contains an NTFS UEFI driver (see http://efi.akeo.ie) as well
   as the UEFI:NTFS bootloader.
-* When the USB drive boots in EFI mode, the first NTFS partition gets ignored
-  by the EFI firmware and the UEFI:NTFS bootloader from the bootable FAT partition
-  is executed.
-* UEFI:NTFS then loads the relevant NTFS EFI driver, locates the existing NTFS
-  partition on the same media, and executes the `/efi/boot/bootx64.efi` or 
-  `/efi/boot/bootia32.efi` that resides there. This achieves the exact same
-  outcome as if the EFI firmware had native NTFS support and could boot 
-  straight from NTFS.
+* When the USB drive boots in UEFI mode, the first NTFS partition gets ignored
+  by the UEFI firmware (unless that firmware already includes an NTFS driver,
+  in which case 2 boot options will be available, that perform the same thing)
+  and the UEFI:NTFS bootloader from the bootable FAT partition is executed.
+* UEFI:NTFS then loads the relevant NTFS UEFI driver, locates the existing NTFS
+  partition on the same media, and executes the `/efi/boot/bootia32.efi`,
+  `/efi/boot/bootx64.efi` or `/efi/boot/bootarm.efi` that resides there. This
+  achieves the exact same outcome as if the UEFI firmware had native support
+  for NTFS and could boot straight from it.
 
 ## Prerequisites
 
 * [Visual Studio 2015](http://www.visualstudio.com/products/visual-studio-community-vs)
   or [MinGW](http://www.mingw.org/)/[MinGW64](http://mingw-w64.sourceforge.net/)
-  (preferably installed using [msys2](https://sourceforge.net/projects/msys2/))
+  (preferably installed using [msys2](https://sourceforge.net/projects/msys2/)) or gcc
 * [QEMU](http://www.qemu.org)
 * git
 * wget, unzip, if not using Visual Studio
@@ -63,11 +64,11 @@ run make without invoking `qemu` to produce proper release binaries.
 
 ## Download and installation
 
-You can find a ready-to-use FAT partition image (256KB), containing both the 32
-and 64 bit versions of the UEFI:NTFS loader and driver in the Rufus project,
-under [/res/uefi](https://github.com/pbatard/rufus/tree/master/res/uefi).
+You can find a ready-to-use FAT partition image, containing the x86 (both 32 and
+64 bit) and ARM (32 bit) versions of the UEFI:NTFS loader and driver in the
+Rufus project, under [/res/uefi](https://github.com/pbatard/rufus/tree/master/res/uefi).
 
-If you create a 256KB partition at the end of your drive and copy
+If you create a partition of the same size at the end of your drive and copy
 [`uefi-ntfs.img`](https://github.com/pbatard/rufus/blob/master/res/uefi/uefi-ntfs.img?raw=true)
 there (in DD mode of course), then you should have everything you need to make
 the first NTFS partition on that drive UEFI bootable.
