@@ -197,6 +197,7 @@
       <MSExtensions>false</MSExtensions>
       <AdditionalOptions>-ffreestanding -Wno-macro-redefined</AdditionalOptions>
       <ExceptionHandling>Disabled</ExceptionHandling>
+      <Optimization>MinSize</Optimization>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -220,6 +221,7 @@
       <MSExtensions>false</MSExtensions>
       <AdditionalOptions>-ffreestanding -Wno-macro-redefined</AdditionalOptions>
       <ExceptionHandling>Disabled</ExceptionHandling>
+      <Optimization>MinSize</Optimization>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -243,6 +245,7 @@
       <MSExtensions>false</MSExtensions>
       <AdditionalOptions>-ffreestanding -Wno-macro-redefined</AdditionalOptions>
       <ExceptionHandling>Disabled</ExceptionHandling>
+      <Optimization>MinSize</Optimization>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

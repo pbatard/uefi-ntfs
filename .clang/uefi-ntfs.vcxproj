@@ -234,6 +234,7 @@
       <ExceptionHandling>Disabled</ExceptionHandling>
       <AdditionalOptions>-ffreestanding -Wno-macro-redefined</AdditionalOptions>
       <MSExtensions>false</MSExtensions>
+      <Optimization>MinSize</Optimization>
     </ClCompile>
     <Lib>
       <SubSystem>EFI Application</SubSystem>
@@ -263,6 +264,7 @@
       <ExceptionHandling>Disabled</ExceptionHandling>
       <AdditionalOptions>-ffreestanding -Wno-macro-redefined</AdditionalOptions>
       <MSExtensions>false</MSExtensions>
+      <Optimization>MinSize</Optimization>
     </ClCompile>
     <Lib>
       <SubSystem>EFI Application</SubSystem>
@@ -292,6 +294,7 @@
       <ExceptionHandling>Disabled</ExceptionHandling>
       <AdditionalOptions>-ffreestanding -Wno-macro-redefined</AdditionalOptions>
       <MSExtensions>false</MSExtensions>
+      <Optimization>MinSize</Optimization>
     </ClCompile>
     <Lib>
       <SubSystem>EFI Application</SubSystem>

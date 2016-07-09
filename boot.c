@@ -71,7 +71,7 @@ EFI_HANDLE MainImageHandle = NULL;
 #define PrintWarning(fmt, ...) Print(L"%E[WARN] " fmt L"%N\n", ##__VA_ARGS__);
 #define PrintError(fmt, ...) Print(L"%E[FAIL] " fmt L": [%d] %r%N\n", ##__VA_ARGS__, (Status&0x7FFFFFFF), Status);
 
-// Return the device path node right before the end node
+/* Return the device path node right before the end node */
 static EFI_DEVICE_PATH* GetLastDevicePath(CONST EFI_DEVICE_PATH* dp)
 {
 	EFI_DEVICE_PATH *next, *p;
@@ -229,8 +229,8 @@ out:
 static CHAR16* GetDriverName(CONST EFI_HANDLE DriverHandle)
 {
 	CHAR16 *DriverName;
-	EFI_COMPONENT_NAME *ComponentName;
-	EFI_COMPONENT_NAME2 *ComponentName2;
+	EFI_COMPONENT_NAME_PROTOCOL *ComponentName;
+	EFI_COMPONENT_NAME2_PROTOCOL *ComponentName2;
 
 	// Try EFI_COMPONENT_NAME2 protocol first
 	if ( (BS->OpenProtocol(DriverHandle, &ComponentName2Protocol, (VOID**)&ComponentName2,
@@ -324,7 +324,7 @@ static VOID DisconnectBlockingDrivers(VOID) {
  */
 EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 {
-	EFI_LOADED_IMAGE *LoadedImage;
+	EFI_LOADED_IMAGE_PROTOCOL *LoadedImage;
 	EFI_STATUS Status;
 	EFI_INPUT_KEY Key;
 	EFI_DEVICE_PATH *DevicePath, *ParentDevicePath = NULL, *BootDiskPath = NULL;
