@@ -2,37 +2,37 @@
 <Project ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LocalDebuggerCommand>$(SystemRoot)\System32\wscript</LocalDebuggerCommand>
-    <LocalDebuggerCommandArguments>//d .msvc\debug.vbs "$(Configuration)" "$(TargetPath)" "$(PlatformShortName)"</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>//d debug.vbs "$(Configuration)" "$(TargetPath)" "$(PlatformShortName)"</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerWorkingDirectory>$(SolutionDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LocalDebuggerCommand>$(SystemRoot)\System32\wscript</LocalDebuggerCommand>
-    <LocalDebuggerCommandArguments>//d .msvc\debug.vbs "$(Configuration)" "$(TargetPath)" "$(PlatformShortName)"</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>//d debug.vbs "$(Configuration)" "$(TargetPath)" "$(PlatformShortName)"</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerWorkingDirectory>$(SolutionDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <LocalDebuggerCommand>$(SystemRoot)\System32\wscript</LocalDebuggerCommand>
-    <LocalDebuggerCommandArguments>//d .msvc\debug.vbs "$(Configuration)" "$(TargetPath)" "$(PlatformShortName)"</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>//d debug.vbs "$(Configuration)" "$(TargetPath)" "$(PlatformShortName)"</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerWorkingDirectory>$(SolutionDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LocalDebuggerCommand>$(SystemRoot)\System32\wscript</LocalDebuggerCommand>
-    <LocalDebuggerCommandArguments>//d .msvc\debug.vbs "$(Configuration)" "$(TargetPath)" "$(PlatformShortName)"</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>//d debug.vbs "$(Configuration)" "$(TargetPath)" "$(PlatformShortName)"</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerWorkingDirectory>$(SolutionDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LocalDebuggerCommand>$(SystemRoot)\System32\wscript</LocalDebuggerCommand>
-    <LocalDebuggerCommandArguments>//d .msvc\debug.vbs "$(Configuration)" "$(TargetPath)" "$(PlatformShortName)"</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>//d debug.vbs "$(Configuration)" "$(TargetPath)" "$(PlatformShortName)"</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerWorkingDirectory>$(SolutionDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <LocalDebuggerCommand>$(SystemRoot)\System32\wscript</LocalDebuggerCommand>
-    <LocalDebuggerCommandArguments>//d .msvc\debug.vbs "$(Configuration)" "$(TargetPath)" "$(PlatformShortName)"</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>//d debug.vbs "$(Configuration)" "$(TargetPath)" "$(PlatformShortName)"</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerWorkingDirectory>$(SolutionDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>

@@ -318,7 +318,7 @@
     <ClCompile Include="..\boot.c" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\.msvc\debug.vbs" />
+    <None Include="..\debug.vbs" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

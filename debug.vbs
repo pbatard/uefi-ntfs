@@ -45,7 +45,7 @@ VHD_ZIP    = "ntfs.zip"
 VHD_IMG    = "ntfs.vhd"
 VHD_URL    = "http://efi.akeo.ie/test/" & VHD_ZIP
 DRV        = "ntfs_" & UEFI_EXT & ".efi"
-DRV_URL    = "http://efi.akeo.ie/downloads/efifs-0.9/" & UEFI_EXT & "/" & DRV
+DRV_URL    = "http://efi.akeo.ie/downloads/efifs-1.0/" & UEFI_EXT & "/" & DRV
 
 ' Globals
 Set fso = CreateObject("Scripting.FileSystemObject")

@@ -19,7 +19,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\.msvc\debug.vbs">
+    <None Include="..\debug.vbs">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>
