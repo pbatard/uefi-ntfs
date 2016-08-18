@@ -25,7 +25,6 @@
 #define NUM_RETRIES     1
 #define DELAY           3	// delay before retry, in seconds
 
-EFI_GUID EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID = SIMPLE_FILE_SYSTEM_PROTOCOL;
 EFI_HANDLE MainImageHandle = NULL;
 // NB: FreePool(NULL) is perfectly valid
 #define SafeFree(p) do { FreePool(p); p = NULL;} while(0)
@@ -72,7 +71,7 @@ EFI_HANDLE MainImageHandle = NULL;
 #define PrintError(fmt, ...) Print(L"%E[FAIL] " fmt L": [%d] %r%N\n", ##__VA_ARGS__, (Status&0x7FFFFFFF), Status);
 
 /* Return the device path node right before the end node */
-static EFI_DEVICE_PATH* GetLastDevicePath(CONST EFI_DEVICE_PATH* dp)
+static EFI_DEVICE_PATH* GetLastDevicePath(CONST EFI_DEVICE_PATH_PROTOCOL* dp)
 {
 	EFI_DEVICE_PATH *next, *p;
 
@@ -260,12 +259,12 @@ static VOID DisconnectBlockingDrivers(VOID) {
 	UINTN HandleCount = 0, Index, OpenInfoIndex, OpenInfoCount;
 	EFI_HANDLE *Handles = NULL;
 	CHAR16 *DevicePathString;
-	EFI_FILE_IO_INTERFACE *Volume;
-	EFI_BLOCK_IO *BlockIo;
+	EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *Volume;
+	EFI_BLOCK_IO_PROTOCOL *BlockIo;
 	EFI_OPEN_PROTOCOL_INFORMATION_ENTRY *OpenInfo;
 
 	// Get all DiskIo handles
-	Status = BS->LocateHandleBuffer(ByProtocol, &DiskIoProtocol, NULL, &HandleCount, &Handles);
+	Status = BS->LocateHandleBuffer(ByProtocol, &gEfiDiskIoProtocolGuid, NULL, &HandleCount, &Handles);
 	if (EFI_ERROR(Status) || (HandleCount == 0))
 		return;
 
@@ -275,7 +274,7 @@ static VOID DisconnectBlockingDrivers(VOID) {
 		// This is then whole disk and DiskIo
 		// should be opened here BY_DRIVER by Partition driver
 		// to produce partition volumes.
-		Status = BS->OpenProtocol(Handles[Index], &BlockIoProtocol, (VOID**)&BlockIo,
+		Status = BS->OpenProtocol(Handles[Index], &gEfiBlockIoProtocolGuid, (VOID**)&BlockIo,
 			MainImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
 
 		if (EFI_ERROR(Status))
@@ -284,7 +283,7 @@ static VOID DisconnectBlockingDrivers(VOID) {
 			continue;
 
 		// If SimpleFileSystem is already produced - skip it, this is ok
-		Status = BS->OpenProtocol(Handles[Index], &FileSystemProtocol, (VOID**)&Volume,
+		Status = BS->OpenProtocol(Handles[Index], &gEfiSimpleFileSystemProtocolGuid, (VOID**)&Volume,
 			MainImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
 		if (Status == EFI_SUCCESS)
 			continue;
@@ -293,7 +292,7 @@ static VOID DisconnectBlockingDrivers(VOID) {
 
 		// If no SimpleFileSystem on this handle but DiskIo is opened BY_DRIVER
 		// then disconnect this connection
-		Status = BS->OpenProtocolInformation(Handles[Index], &DiskIoProtocol, &OpenInfo, &OpenInfoCount);
+		Status = BS->OpenProtocolInformation(Handles[Index], &gEfiDiskIoProtocolGuid, &OpenInfo, &OpenInfoCount);
 		if (EFI_ERROR(Status)) {
 			PrintWarning(L"Could not get DiskIo protocol for %s: %r", DevicePathString, Status);
 			FreePool(DevicePathString);
@@ -330,9 +329,9 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	EFI_DEVICE_PATH *DevicePath, *ParentDevicePath = NULL, *BootDiskPath = NULL;
 	EFI_DEVICE_PATH *BootPartitionPath = NULL;
 	EFI_HANDLE *Handles = NULL, DriverHandle, DriverHandleList[2];
-	EFI_FILE_IO_INTERFACE* Volume;
+	EFI_SIMPLE_FILE_SYSTEM_PROTOCOL* Volume;
 	EFI_FILE_HANDLE Root;
-	EFI_BLOCK_IO *BlockIo;
+	EFI_BLOCK_IO_PROTOCOL *BlockIo;
 	CHAR8 *Buffer, NTFSMagic[] = { 'N', 'T', 'F', 'S', ' ', ' ', ' ', ' '};
 	CHAR16 *DevicePathString;
 	UINTN Index, Try, HandleCount = 0;
@@ -343,8 +342,8 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 
 	Print(L"\n%H*** UEFI:NTFS (%s) ***%N\n\n", Arch);
 
-	Status = BS->OpenProtocol(MainImageHandle, &LoadedImageProtocol, (VOID**)&LoadedImage,
-		MainImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
+	Status = BS->OpenProtocol(MainImageHandle, &gEfiLoadedImageProtocolGuid,
+		(VOID**)&LoadedImage, MainImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
 	if (EFI_ERROR(Status)) {
 		PrintError(L"Unable to access boot image interface");
 		goto out;
@@ -380,8 +379,8 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	// NB: Some HP firmwares refuse to start drivers that are not of type 'EFI Boot
 	// System Driver'. For instance, a driver of type 'EFI Runtime Driver' produces
 	// a 'Load Error' on StartImage() with these firmwares => check the type.
-	Status = BS->OpenProtocol(DriverHandle, &LoadedImageProtocol, (VOID**)&LoadedImage,
-		MainImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
+	Status = BS->OpenProtocol(DriverHandle, &gEfiLoadedImageProtocolGuid,
+		(VOID**)&LoadedImage, MainImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
 	if (EFI_ERROR(Status)) {
 		PrintError(L"Unable to access driver interface");
 		goto out;
@@ -402,7 +401,8 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 
 	PrintInfo(L"Locating the first NTFS partition on the boot device");
 	// Now enumerate all disk handles
-	Status = BS->LocateHandleBuffer(ByProtocol, &DiskIoProtocol, NULL, &HandleCount, &Handles);
+	Status = BS->LocateHandleBuffer(ByProtocol, &gEfiDiskIoProtocolGuid,
+		NULL, &HandleCount, &Handles);
 	if (EFI_ERROR(Status)) {
 		PrintError(L"Failed to list disks");
 		goto out;
@@ -429,8 +429,8 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		(VOID)SameDevice;	// Silence a MinGW warning
 #endif
 		// Read the first block of the partition and look for the NTFS magic in the OEM ID
-		Status = BS->OpenProtocol(Handles[Index], &BlockIoProtocol, (VOID**) &BlockIo,
-			MainImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
+		Status = BS->OpenProtocol(Handles[Index], &gEfiBlockIoProtocolGuid,
+			(VOID**) &BlockIo, MainImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
 		if (EFI_ERROR(Status))
 			continue;
 		Buffer = (CHAR8*)AllocatePool(BlockIo->Media->BlockSize);
@@ -454,8 +454,8 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	PrintInfo(L"Checking if partition needs the NTFS service");
 	// Test for presence of file system protocol (to see if there already is
 	// an NTFS driver servicing this partition)
-	Status = BS->OpenProtocol(Handles[Index], &FileSystemProtocol, (VOID**)&Volume,
-		MainImageHandle, NULL, EFI_OPEN_PROTOCOL_TEST_PROTOCOL);
+	Status = BS->OpenProtocol(Handles[Index], &gEfiSimpleFileSystemProtocolGuid,
+		(VOID**)&Volume, MainImageHandle, NULL, EFI_OPEN_PROTOCOL_TEST_PROTOCOL);
 	if (Status == EFI_SUCCESS) {
 		// An NTFS driver is already set => no need to start ours
 		PrintWarning(L"An NTFS service is already loaded");
@@ -483,8 +483,8 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	// at the NTFS content, in case the system is slow to start our service...
 	for (Try = 0; ; Try++) {
 		PrintInfo(L"Looking for NTFS EFI loader");
-		Status = BS->OpenProtocol(Handles[Index], &FileSystemProtocol, (VOID**)&Volume,
-			MainImageHandle, NULL, EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
+		Status = BS->OpenProtocol(Handles[Index], &gEfiSimpleFileSystemProtocolGuid,
+			(VOID**)&Volume, MainImageHandle, NULL, EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
 		if (!EFI_ERROR(Status))
 			break;
 		PrintError(L"Could not open NTFS volume");
