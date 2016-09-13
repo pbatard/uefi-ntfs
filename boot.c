@@ -325,7 +325,6 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 {
 	EFI_LOADED_IMAGE_PROTOCOL *LoadedImage;
 	EFI_STATUS Status;
-	EFI_INPUT_KEY Key;
 	EFI_DEVICE_PATH *DevicePath, *ParentDevicePath = NULL, *BootDiskPath = NULL;
 	EFI_DEVICE_PATH *BootPartitionPath = NULL;
 	EFI_HANDLE *Handles = NULL, DriverHandle, DriverHandleList[2];
@@ -334,7 +333,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	EFI_BLOCK_IO_PROTOCOL *BlockIo;
 	CHAR8 *Buffer, NTFSMagic[] = { 'N', 'T', 'F', 'S', ' ', ' ', ' ', ' '};
 	CHAR16 *DevicePathString;
-	UINTN Index, Try, HandleCount = 0;
+	UINTN Index, Try, Event, HandleCount = 0;
 	BOOLEAN SameDevice, NTFSPartition;
 
 	MainImageHandle = ImageHandle;
@@ -539,7 +538,7 @@ out:
 	if (EFI_ERROR(Status)) {
 		Print(L"%H\nPress any key to exit.%N\n");
 		ST->ConIn->Reset(ST->ConIn, FALSE);
-		while (ST->ConIn->ReadKeyStroke(ST->ConIn, &Key) == EFI_NOT_READY);
+		ST->BootServices->WaitForEvent(1, &ST->ConIn->WaitForKey, &Event);
 	}
 
 	return Status;
