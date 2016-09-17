@@ -75,6 +75,10 @@ Sub DownloadHttp(Url, File)
     Call xHttp.SetRequestHeader("Pragma", "no-cache")
   End If
   Call xHttp.Send()
+  If Not xHttp.Status = 200 Then
+    Call WScript.Echo("Unable to access file - Error " & xHttp.Status)
+    Call WScript.Quit(1)
+  End If
   With bStrm
     .type = BINARY
     .open
