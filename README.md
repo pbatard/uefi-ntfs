@@ -32,7 +32,7 @@ The way this works, in conjunction with Rufus, is as follows:
 
 ## Prerequisites
 
-* [Visual Studio 2015](http://www.visualstudio.com/products/visual-studio-community-vs)
+* [Visual Studio 2017](https://www.visualstudio.com/vs/community/) or
   or [MinGW](http://www.mingw.org/)/[MinGW64](http://mingw-w64.sourceforge.net/)
   (preferably installed using [msys2](https://sourceforge.net/projects/msys2/)) or gcc
 * [QEMU](http://www.qemu.org)
@@ -73,13 +73,8 @@ If you create a partition of the same size at the end of your drive and copy
 there (in DD mode of course), then you should have everything you need to make
 the first NTFS partition on that drive UEFI bootable.
 
-## Visual Studio and ARM support
+## Visual Studio 2017 and ARM support
 
-To enable ARM compilation in Visual Studio 2015, you must perform the following:
-* Make sure Visual Studio is fully closed.
-* Navigate to `C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V140\Platforms\ARM` and
-  remove the read-only attribute on `Platform.Common.props`.
-* With a text editor __running with Administrative privileges__ open:  
-  `C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V140\Platforms\ARM\Platform.Common.props`.
-* Under the `<PropertyGroup>` section add the following:  
-  `<WindowsSDKDesktopARMSupport>true</WindowsSDKDesktopARMSupport>`
+Since Microsoft, in their great wisdom, decided to remove ARM compilation from
+the VS2017 native tools, ARM support is only available with CodeGen/Clang.
+To compile for ARM, you must therefore use the `uefi-simple (Clang).sln` solution.

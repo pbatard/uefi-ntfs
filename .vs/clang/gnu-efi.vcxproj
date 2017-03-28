@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|ARM">
       <Configuration>Debug</Configuration>
@@ -34,41 +34,43 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140_clang_c2</PlatformToolset>
+    <PlatformToolset>v141_clang_c2</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140_clang_c2</PlatformToolset>
+    <PlatformToolset>v141_clang_c2</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140_clang_c2</PlatformToolset>
+    <PlatformToolset>v141_clang_c2</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
+    <WindowsSDKDesktopARMSupport>true</WindowsSDKDesktopARMSupport>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140_clang_c2</PlatformToolset>
+    <PlatformToolset>v141_clang_c2</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140_clang_c2</PlatformToolset>
+    <PlatformToolset>v141_clang_c2</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140_clang_c2</PlatformToolset>
+    <PlatformToolset>v141_clang_c2</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
+    <WindowsSDKDesktopARMSupport>true</WindowsSDKDesktopARMSupport>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -132,7 +134,7 @@
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <MSExtensions>false</MSExtensions>
-      <AdditionalOptions>-ffreestanding -Wno-macro-redefined</AdditionalOptions>
+      <AdditionalOptions>-ffreestanding -Wno-macro-redefined -fno-builtin</AdditionalOptions>
       <ExceptionHandling>Disabled</ExceptionHandling>
     </ClCompile>
     <Link>
@@ -153,7 +155,7 @@
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <MSExtensions>false</MSExtensions>
-      <AdditionalOptions>-ffreestanding -Wno-macro-redefined</AdditionalOptions>
+      <AdditionalOptions>-ffreestanding -Wno-macro-redefined -fno-builtin</AdditionalOptions>
       <ExceptionHandling>Disabled</ExceptionHandling>
     </ClCompile>
     <Link>
@@ -174,7 +176,7 @@
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <MSExtensions>false</MSExtensions>
-      <AdditionalOptions>-ffreestanding -Wno-macro-redefined</AdditionalOptions>
+      <AdditionalOptions>-ffreestanding -Wno-macro-redefined -fno-builtin</AdditionalOptions>
       <ExceptionHandling>Disabled</ExceptionHandling>
     </ClCompile>
     <Link>
@@ -195,9 +197,8 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <MSExtensions>false</MSExtensions>
-      <AdditionalOptions>-ffreestanding -Wno-macro-redefined</AdditionalOptions>
+      <AdditionalOptions>-ffreestanding -Wno-macro-redefined -fno-builtin</AdditionalOptions>
       <ExceptionHandling>Disabled</ExceptionHandling>
-      <Optimization>MinSize</Optimization>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -219,9 +220,8 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <MSExtensions>false</MSExtensions>
-      <AdditionalOptions>-ffreestanding -Wno-macro-redefined</AdditionalOptions>
+      <AdditionalOptions>-ffreestanding -Wno-macro-redefined -fno-builtin</AdditionalOptions>
       <ExceptionHandling>Disabled</ExceptionHandling>
-      <Optimization>MinSize</Optimization>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -243,9 +243,8 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <MSExtensions>false</MSExtensions>
-      <AdditionalOptions>-ffreestanding -Wno-macro-redefined</AdditionalOptions>
+      <AdditionalOptions>-ffreestanding -Wno-macro-redefined -fno-builtin</AdditionalOptions>
       <ExceptionHandling>Disabled</ExceptionHandling>
-      <Optimization>MinSize</Optimization>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -258,7 +257,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\gnu-efi\lib\arm\initplat.c">
+    <ClCompile Include="..\..\gnu-efi\lib\arm\initplat.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
@@ -266,7 +265,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\gnu-efi\lib\arm\math.c">
+    <ClCompile Include="..\..\gnu-efi\lib\arm\math.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -274,19 +273,19 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">false</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\gnu-efi\lib\boxdraw.c" />
-    <ClCompile Include="..\gnu-efi\lib\cmdline.c" />
-    <ClCompile Include="..\gnu-efi\lib\console.c" />
-    <ClCompile Include="..\gnu-efi\lib\crc.c" />
-    <ClCompile Include="..\gnu-efi\lib\data.c" />
-    <ClCompile Include="..\gnu-efi\lib\debug.c" />
-    <ClCompile Include="..\gnu-efi\lib\dpath.c" />
-    <ClCompile Include="..\gnu-efi\lib\error.c" />
-    <ClCompile Include="..\gnu-efi\lib\event.c" />
-    <ClCompile Include="..\gnu-efi\lib\guid.c" />
-    <ClCompile Include="..\gnu-efi\lib\hand.c" />
-    <ClCompile Include="..\gnu-efi\lib\hw.c" />
-    <ClCompile Include="..\gnu-efi\lib\ia32\initplat.c">
+    <ClCompile Include="..\..\gnu-efi\lib\boxdraw.c" />
+    <ClCompile Include="..\..\gnu-efi\lib\cmdline.c" />
+    <ClCompile Include="..\..\gnu-efi\lib\console.c" />
+    <ClCompile Include="..\..\gnu-efi\lib\crc.c" />
+    <ClCompile Include="..\..\gnu-efi\lib\data.c" />
+    <ClCompile Include="..\..\gnu-efi\lib\debug.c" />
+    <ClCompile Include="..\..\gnu-efi\lib\dpath.c" />
+    <ClCompile Include="..\..\gnu-efi\lib\error.c" />
+    <ClCompile Include="..\..\gnu-efi\lib\event.c" />
+    <ClCompile Include="..\..\gnu-efi\lib\guid.c" />
+    <ClCompile Include="..\..\gnu-efi\lib\hand.c" />
+    <ClCompile Include="..\..\gnu-efi\lib\hw.c" />
+    <ClCompile Include="..\..\gnu-efi\lib\ia32\initplat.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">true</ExcludedFromBuild>
@@ -294,7 +293,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\gnu-efi\lib\ia32\math.c">
+    <ClCompile Include="..\..\gnu-efi\lib\ia32\math.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">true</ExcludedFromBuild>
@@ -302,19 +301,19 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\gnu-efi\lib\init.c" />
-    <ClCompile Include="..\gnu-efi\lib\lock.c" />
-    <ClCompile Include="..\gnu-efi\lib\misc.c" />
-    <ClCompile Include="..\gnu-efi\lib\print.c" />
-    <ClCompile Include="..\gnu-efi\lib\runtime\efirtlib.c" />
-    <ClCompile Include="..\gnu-efi\lib\runtime\rtdata.c" />
-    <ClCompile Include="..\gnu-efi\lib\runtime\rtlock.c" />
-    <ClCompile Include="..\gnu-efi\lib\runtime\rtstr.c" />
-    <ClCompile Include="..\gnu-efi\lib\runtime\vm.c" />
-    <ClCompile Include="..\gnu-efi\lib\smbios.c" />
-    <ClCompile Include="..\gnu-efi\lib\sread.c" />
-    <ClCompile Include="..\gnu-efi\lib\str.c" />
-    <ClCompile Include="..\gnu-efi\lib\x86_64\initplat.c">
+    <ClCompile Include="..\..\gnu-efi\lib\init.c" />
+    <ClCompile Include="..\..\gnu-efi\lib\lock.c" />
+    <ClCompile Include="..\..\gnu-efi\lib\misc.c" />
+    <ClCompile Include="..\..\gnu-efi\lib\print.c" />
+    <ClCompile Include="..\..\gnu-efi\lib\runtime\efirtlib.c" />
+    <ClCompile Include="..\..\gnu-efi\lib\runtime\rtdata.c" />
+    <ClCompile Include="..\..\gnu-efi\lib\runtime\rtlock.c" />
+    <ClCompile Include="..\..\gnu-efi\lib\runtime\rtstr.c" />
+    <ClCompile Include="..\..\gnu-efi\lib\runtime\vm.c" />
+    <ClCompile Include="..\..\gnu-efi\lib\smbios.c" />
+    <ClCompile Include="..\..\gnu-efi\lib\sread.c" />
+    <ClCompile Include="..\..\gnu-efi\lib\str.c" />
+    <ClCompile Include="..\..\gnu-efi\lib\x86_64\initplat.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">true</ExcludedFromBuild>
@@ -322,7 +321,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\gnu-efi\lib\x86_64\math.c">
+    <ClCompile Include="..\..\gnu-efi\lib\x86_64\math.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
@@ -332,7 +331,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\missing\stdarg.h" />
+    <ClInclude Include="..\..\missing\stdarg.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

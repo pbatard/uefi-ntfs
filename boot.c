@@ -1,6 +1,6 @@
 /*
  * uefi-ntfs: UEFI/NTFS chain loader
- * Copyright © 2014-2016 Pete Batard <pete@akeo.ie>
+ * Copyright © 2014-2017 Pete Batard <pete@akeo.ie>
  * With parts from GRUB © 2006-2015 Free Software Foundation, Inc.
  * With parts from rEFInd © 2012-2016 Roderick W. Smith
  *
