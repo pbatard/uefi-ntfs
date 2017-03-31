@@ -8,7 +8,7 @@
  * ARM developers everywhere.
  */
 
-/* This CRT replacement is only for ARM compilation with CodeGen/Clang */
+/* This CRT replacement is only needed for ARM compilation using Visual Studio's Clang/C2 */
 #if defined(_M_ARM) && defined(__clang__)
 
 #if !defined(__STDC_VERSION__) || (__STDC_VERSION__ < 199901L )
@@ -204,12 +204,12 @@ static __inline void __rt_udiv64_internal(udiv64_result_t *result, uint64_t divi
  * intermediate language (C2 or LLVM or whatever), with NO FRIGGING
  * ASSEMBLY, be it inline or standalone, and, because Microsoft was
  * also so kind as to remove its runtime libs for ARM, you MUST provide
- * your own version of __rt_udiv64(), that has its result residing
- * in ARM registers r0/r1/r2/r3?
+ * your own version of __rt_udiv64(), that must return the result in
+ * ARM registers r0/r1/r2/r3?
  * Why, you "just" define an (uint64_t, uint64_t) function call, that
  * points to the binary code for 'mov pc, lr' (i.e. ARM's return from
- * call instruction) since that allows you to set r0/r1 to your first
- * call parameter and r2/r3 to the second.
+ * call instruction) since you can then use this call to set r0/r1 to
+ * the first call parameter and r2/r3 to the second.
  */
 typedef void(*set_return_registers_t)(uint64_t, uint64_t);
 static const uint32_t _set_return_registers = 0xe1a0f00e;	// mov pc, lr
