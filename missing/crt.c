@@ -1,11 +1,8 @@
 /*
- * Dear Microsoft,
+ * Our own CRT replacement for Clang
  *
- * SCREW YOU!!
- *
- * Sincerely,
- *
- * ARM developers everywhere.
+ * This is used to demonstrates how it is possible to create UEFI
+ * applications WITHOUT actually linking to any external libraries.
  */
 
 /* This CRT replacement is only needed for ARM compilation using Visual Studio's Clang/C2 */
@@ -100,7 +97,8 @@ __inline void __rt_udiv_internal(udiv_result_t *result, uint32_t divisor, uint32
 	shift = _CountLeadingZeros(divisor);
 	shift -= _CountLeadingZeros(dividend);
 
-	/* Shift the divisor to the left, so that it's highest bit is the same as the highest bit of the dividend */
+	/* Shift the divisor to the left, so that it's highest bit is the same as the
+	   highest bit of the dividend */
 	divisor <<= shift;
 
 	mask = 1 << shift;
@@ -157,7 +155,8 @@ uint64_t __rt_udiv(uint32_t divisor, uint32_t dividend)
 	return (((uint64_t)result.modulus) << 32) | ((uint32_t)result.quotient);
 }
 
-static __inline void __rt_udiv64_internal(udiv64_result_t *result, uint64_t divisor, uint64_t dividend)
+static __inline void __rt_udiv64_internal(udiv64_result_t *result,
+	uint64_t divisor, uint64_t dividend)
 {
 	uint32_t shift;
 	uint64_t mask;
@@ -178,7 +177,8 @@ static __inline void __rt_udiv64_internal(udiv64_result_t *result, uint64_t divi
 	shift = _CountLeadingZeros64(divisor);
 	shift -= _CountLeadingZeros64(dividend);
 
-	/* Shift the divisor to the left, so that it's highest bit is the same as the highest bit of the dividend */
+	/* Shift the divisor to the left, so that it's highest bit is the same as the
+	   highest bit of the dividend */
 	divisor <<= shift;
 
 	mask = 1LL << shift;
@@ -199,17 +199,15 @@ static __inline void __rt_udiv64_internal(udiv64_result_t *result, uint64_t divi
 }
 
 /*
- * Soooo, what do you do when you have an UNCOOPERATIVE compiler
- * (Microsoft's crippled version of Clang), compiling into some weird
- * intermediate language (C2 or LLVM or whatever), with NO FRIGGING
- * ASSEMBLY, be it inline or standalone, and, because Microsoft was
- * also so kind as to remove its runtime libs for ARM, you MUST provide
- * your own version of __rt_udiv64(), that must return the result in
- * ARM registers r0/r1/r2/r3?
- * Why, you "just" define an (uint64_t, uint64_t) function call, that
- * points to the binary code for 'mov pc, lr' (i.e. ARM's return from
- * call instruction) since you can then use this call to set r0/r1 to
- * the first call parameter and r2/r3 to the second.
+ * Soooo, what do you do when you have an UNCOOPERATIVE compiler (Microsoft's
+ * crippled version of Clang), compiling into some weird intermediate language
+ * (C2 or LLVM or whatever), with NO FRIGGING ASSEMBLY, be it inline or
+ * standalone, and you want to provide your own version of __rt_udiv64(), that
+ * MUST return the result in ARM registers r0/r1/r2/r3?
+ * Why, you "just" define an (uint64_t, uint64_t) function call, that points
+ * to the binary code for 'mov pc, lr' (i.e. ARM's return from call instruction)
+ * since you can then use this call to set r0/r1 to the first call parameter and
+ * r2/r3 to the second.
  */
 typedef void(*set_return_registers_t)(uint64_t, uint64_t);
 static const uint32_t _set_return_registers = 0xe1a0f00e;	// mov pc, lr
