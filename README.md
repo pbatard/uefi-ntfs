@@ -3,16 +3,25 @@ UEFI:NTFS - Boot NTFS partitions from UEFI
 
 This generic bootloader (which is primarily intended for use with [Rufus](https://rufus.akeo.ie)
 but can also be used independently), is meant to allow seamless boot from an
-EFI bootloader, that resides on an NTFS partition. In other words, UEFI:NTFS is
-designed to remove the UEFI restriction of being able to natively boot from
-FAT32 only, and allow NTFS boot without the need for any user intervention.
+UEFI bootloader, that happens to resides on an NTFS partition.
 
-This can be used, for instance, for booting a Windows NTFS installation media,
-in UEFI mode, thus allowing support for files that are larger than 4GB
-(something a native UEFI FAT32 partition cannot support), or allow
-indiscriminate BIOS+UEFI boot of Windows To Go drives.
+In other words, UEFI:NTFS is designed to remove the restriction, which most
+UEFI firmwares have, of only having enabled boot from FAT32 partitions, and
+bring the ability to also boot from NTFS partitions.
 
-The way this works, in conjunction with Rufus, is as follows:
+This can be used, for instance, for EFI-booting a Windows NTFS installation
+media, that happens to have files that are larger than 4 GB (something FAT32
+cannot support), or allow dual BIOS + UEFI boot of Windows To Go drives.
+
+Note that, because there is a lot of innacurate information about this on the
+internet, it must be pointed out that there is absolutely nothing in the
+UEFI specifications that mandates the use of FAT32 for EFI boot. Instead,
+it is the __choice__ of PC manufacturers, to who tend to only include a FAT32
+driver in their UEFI firmwares, that leads people to believe that only FAT32
+works with UEFI. Yet, as demonstrated with this project, it is still very
+much possible to get any UEFI firmware to boot from a non FAT32 filesystem.
+
+The way UEFI:NTFS works, in conjunction with Rufus, is as follows:
 
 * Rufus creates 2 partitions on the target USB disk (these can be MBR or GPT
   partitions). The first one is an NTFS partition occupying almost all the
