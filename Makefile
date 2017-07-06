@@ -129,7 +129,7 @@ endif
 
 qemu: CFLAGS += -D_DEBUG
 qemu: all OVMF_$(OVMF_ARCH).fd ntfs.vhd image/efi/boot/boot$(ARCH).efi image/efi/rufus/ntfs_$(ARCH).efi
-	$(QEMU) $(QEMU_OPTS) -bios ./OVMF_$(OVMF_ARCH).fd -net none -hda fat:image -hdb ntfs.vhd
+	$(QEMU) $(QEMU_OPTS) -bios ./OVMF_$(OVMF_ARCH).fd -net none -hda fat:rw:image -hdb ntfs.vhd
 
 image/efi/boot/boot$(ARCH).efi: boot.efi
 	mkdir -p image/efi/boot
