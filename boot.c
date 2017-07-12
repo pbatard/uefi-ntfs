@@ -29,32 +29,28 @@ EFI_HANDLE MainImageHandle = NULL;
 // NB: FreePool(NULL) is perfectly valid
 #define SafeFree(p) do { FreePool(p); p = NULL;} while(0)
 
-// Use 'rufus' in the driver path, so that we don't accidentally latch onto a user driver
 #if defined(_M_X64) || defined(__x86_64__)
+// Use 'rufus' in the driver path, so that we don't accidentally latch onto a user driver
   static CHAR16* DriverPath = L"\\efi\\rufus\\ntfs_x64.efi";
-#elif defined(_M_IX86) || defined(__i386__)
-  static CHAR16* DriverPath = L"\\efi\\rufus\\ntfs_ia32.efi";
-#elif defined (_M_ARM) || defined(__arm__)
-  static CHAR16* DriverPath = L"\\efi\\rufus\\ntfs_arm.efi";
-#else
-#  error Usupported architecture
-#endif
 // We'll need to fix the casing as our target is a case sensitive file system and Microsoft
 // indiscriminately seems to uses "EFI\Boot" or "efi\boot"
-#if defined(_M_X64) || defined(__x86_64__)
   static CHAR16* LoaderPath = L"\\efi\\boot\\bootx64.efi";
-#elif defined(_M_IX86) || defined(__i386__)
-  static CHAR16* LoaderPath = L"\\efi\\boot\\bootia32.efi";
-#elif defined (_M_ARM) || defined(__arm__)
-  static CHAR16* LoaderPath = L"\\efi\\boot\\bootarm.efi";
-#endif
 // Always good to know the arch we're running
-#if defined(_M_X64) || defined(__x86_64__)
   static CHAR16* Arch = L"x64";
 #elif defined(_M_IX86) || defined(__i386__)
+  static CHAR16* DriverPath = L"\\efi\\rufus\\ntfs_ia32.efi";
+  static CHAR16* LoaderPath = L"\\efi\\boot\\bootia32.efi";
   static CHAR16* Arch = L"ia32";
+#elif defined (_M_ARM64) || defined(__aarch64__)
+  static CHAR16* DriverPath = L"\\efi\\rufus\\ntfs_aa64.efi";
+  static CHAR16* LoaderPath = L"\\efi\\boot\\bootaa64.efi";
+  static CHAR16* Arch = L"aa64";
 #elif defined (_M_ARM) || defined(__arm__)
+  static CHAR16* DriverPath = L"\\efi\\rufus\\ntfs_arm.efi";
+  static CHAR16* LoaderPath = L"\\efi\\boot\\bootarm.efi";
   static CHAR16* Arch = L"arm";
+#else
+#  error Unsupported architecture
 #endif
 
 /*
