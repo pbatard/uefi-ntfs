@@ -24,7 +24,7 @@ the default boot capabilities of UEFI, and that leads many to __erroneously
 believe__ that only FAT32 can be used for UEFI boot.
 
 However, as demonstrated in this project, it is very much possible to work
-ariound this limitation and enable any UEFI firmware to boot from non-FAT32
+around this limitation and enable any UEFI firmware to boot from non-FAT32
 filesystems.
 
 ## Overview
