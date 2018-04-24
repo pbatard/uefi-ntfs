@@ -9,7 +9,7 @@
 ' Modify these variables as needed
 QEMU_PATH  = "C:\Program Files\qemu\"
 ' You can add something like "-S -gdb tcp:127.0.0.1:1234" if you plan to use gdb to debug
-QEMU_OPTS  = "-net none -monitor none -parallel none"
+QEMU_OPTS  = "-nodefaults -vga std -serial vc"
 ' Set to True if you need to download a file that might be cached locally
 NO_CACHE   = False
 
@@ -33,22 +33,27 @@ ElseIf (TARGET = "ARM") Then
   ' You can also add '-device VGA' to the options below, to get graphics output.
   ' But if you do, be mindful that the keyboard input may not work... :(
   QEMU_OPTS = "-M virt -cpu cortex-a15 " & QEMU_OPTS
+ElseIf (TARGET = "ARM64") Then
+  UEFI_EXT  = "aa64"
+  QEMU_ARCH = "aarch64"
+  FW_BASE   = "QEMU_EFI"
+  QEMU_OPTS = "-M virt -cpu cortex-a57 " & QEMU_OPTS
 Else
   MsgBox("Unsupported debug target: " & TARGET)
   Call WScript.Quit(1)
 End If
 BOOT_NAME  = "boot" & UEFI_EXT & ".efi"
 FW_ARCH    = UCase(UEFI_EXT)
-FW_DIR     = "http://efi.akeo.ie/" & FW_BASE & "/"
+FW_DIR     = "https://efi.akeo.ie/" & FW_BASE & "/"
 FW_ZIP     = FW_BASE & "-" & FW_ARCH & ".zip"
 FW_FILE    = FW_BASE & "_" & FW_ARCH & ".fd"
 FW_URL     = FW_DIR & FW_ZIP
 QEMU_EXE   = "qemu-system-" & QEMU_ARCH & "w.exe"
 VHD_ZIP    = "ntfs.zip"
 VHD_IMG    = "ntfs.vhd"
-VHD_URL    = "http://efi.akeo.ie/test/" & VHD_ZIP
+VHD_URL    = "https://efi.akeo.ie/test/" & VHD_ZIP
 DRV        = "ntfs_" & UEFI_EXT & ".efi"
-DRV_URL    = "http://efi.akeo.ie/downloads/efifs-1.1/" & UEFI_EXT & "/" & DRV
+DRV_URL    = "https://efi.akeo.ie/downloads/efifs-latest//" & UEFI_EXT & "/" & DRV
 
 ' Globals
 Set fso = CreateObject("Scripting.FileSystemObject")

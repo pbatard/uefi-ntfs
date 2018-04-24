@@ -9,6 +9,7 @@
 *.db*
 *.ipch
 arm
-x86_64
-x86_32
+aa64
+ia32
+x64
 image

@@ -17,6 +17,9 @@ else
   else ifeq ($(shell uname -m),arm)
     ARCH        = arm
     CROSS_COMPILE =
+  else ifeq ($(shell uname -m),aarch64)
+    ARCH        = aa64
+    CROSS_COMPILE =
   else
     ARCH        = ia32
   endif
@@ -55,6 +58,17 @@ else ifeq ($(ARCH),arm)
   CFLAGS        = -marm -fpic -fshort-wchar
   LDFLAGS       = -Wl,--no-wchar-size-warning -Wl,--defsym=EFI_SUBSYSTEM=$(SUBSYSTEM)
   CRT0_LIBS     = -lgnuefi
+else ifeq ($(ARCH),aa64)
+  GNUEFI_ARCH   = aarch64
+  GCC_ARCH      = aarch64
+  QEMU_ARCH     = aarch64
+  FW_BASE       = QEMU_EFI
+  CROSS_COMPILE = $(GCC_ARCH)-linux-gnu-
+  EP_PREFIX     =
+  CFLAGS        = -fpic -fshort-wchar
+  LDFLAGS       = -Wl,--no-wchar-size-warning -Wl,--defsym=EFI_SUBSYSTEM=$(SUBSYSTEM)
+  CRT0_LIBS     = -lgnuefi
+  QEMU_OPTS     = -M virt -cpu cortex-a57
 endif
 OVMF_ARCH       = $(shell echo $(ARCH) | tr a-z A-Z)
 OVMF_ZIP        = OVMF-$(OVMF_ARCH).zip
@@ -64,7 +78,7 @@ GNUEFI_LIBS     = lib
 # If the compiler produces an elf binary, we need to fiddle with a PE crt0
 ifneq ($(CRT0_LIBS),)
   CRT0_DIR      = $(GNUEFI_DIR)/$(GNUEFI_ARCH)/gnuefi
-  LDFLAGS      += -L$(CRT0_DIR) -T $(GNUEFI_DIR)/gnuefi/elf_$(ARCH)_efi.lds $(CRT0_DIR)/crt0-efi-$(ARCH).o
+  LDFLAGS      += -L$(CRT0_DIR) -T $(GNUEFI_DIR)/gnuefi/elf_$(GNUEFI_ARCH)_efi.lds $(CRT0_DIR)/crt0-efi-$(GNUEFI_ARCH).o
   GNUEFI_LIBS  += gnuefi
 endif
 
@@ -137,20 +151,20 @@ image/efi/boot/boot$(ARCH).efi: boot.efi
 
 # NTFS driver
 ntfs_$(ARCH).efi:
-	wget http://efi.akeo.ie/downloads/efifs-0.9/$(ARCH)/ntfs_$(ARCH).efi
+	wget https://efi.akeo.ie/downloads/efifs-latest/$(ARCH)/ntfs_$(ARCH).efi
 
 image/efi/rufus/ntfs_$(ARCH).efi: ntfs_$(ARCH).efi
 	mkdir -p image/efi/rufus
 	cp -f $< $@
 
-# NTFS test image (contains boot[ia32|x64].efi that say "Hello from NTFS!")
+# NTFS test image (contains boot[ia32|x64|arm|aa64].efi that say "Hello from NTFS!")
 ntfs.vhd:
-	wget http://efi.akeo.ie/test/ntfs.zip
+	wget https://efi.akeo.ie/test/ntfs.zip
 	unzip ntfs.zip
 	rm ntfs.zip
 
 OVMF_$(OVMF_ARCH).fd:
-	wget http://efi.akeo.ie/OVMF/$(OVMF_ZIP)
+	wget https://efi.akeo.ie/OVMF/$(OVMF_ZIP)
 	unzip $(OVMF_ZIP) OVMF.fd
 	mv OVMF.fd OVMF_$(OVMF_ARCH).fd
 	rm $(OVMF_ZIP)

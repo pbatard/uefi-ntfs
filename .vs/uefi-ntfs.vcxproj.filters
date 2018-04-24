@@ -10,12 +10,12 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\debug.vbs">
+    <None Include="..\debug.vbs">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\boot.c">
+    <ClCompile Include="..\boot.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
