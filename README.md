@@ -17,10 +17,10 @@ support) or to allow dual BIOS + UEFI boot of 'Windows To Go' drives.
 As an aside, and because there appears to exist a lot of innacurate information
 about this on the Internet, it needs to be stressed out that there is absolutely
 nothing in the UEFI specifications that actually forces the use of FAT32 for
-UEFI boot. On the contrary, UEFI will happily boot from __ANY__ file system, 
+UEFI boot. On the contrary, UEFI will happily boot from __ANY__ file system,
 as long as your firmware has a driver for it. As such, it is only the choice of
 system manufacturers, who tend to only include a driver for FAT32, that limits
-the default boot capabilities of UEFI, and that leads many to __erroneously 
+the default boot capabilities of UEFI, and that leads many to __erroneously
 believe__ that only FAT32 can be used for UEFI boot.
 
 However, as demonstrated in this project, it is very much possible to work
@@ -46,7 +46,7 @@ The way UEFI:NTFS works, in conjunction with Rufus, is as follows:
   `/efi/boot/bootx64.efi`, `/efi/boot/bootarm.efi` or `/efi/boot/bootaa64.efi`
   that resides there. This achieves the exact same outcome as if the UEFI
   firmware had native support for NTFS and could boot straight from it.
-  
+
 ## Limitations
 
 __[Secure Boot](https://en.wikipedia.org/wiki/Unified_Extensible_Firmware_Interface#Secure_boot)
@@ -70,7 +70,7 @@ Now, there are two things to be said about this:
    Secure Boot.
 
    However, this is not possible because Microsoft have __arbitrarily__
-   decided that [they would not sign anything that is GPLv3](https://blogs.msdn.microsoft.com/windows_hardware_certification/2013/12/03/microsoft-uefi-ca-signing-policy-updates/)
+   decided that [they would not sign anything that is GPLv3](https://techcommunity.microsoft.com/t5/Windows-Hardware-Certification/Microsoft-UEFI-CA-Signing-policy-updates/ba-p/364828)
    under the [false pretence](https://www.gnu.org/licenses/gpl-faq.en.html#GiveUpKeys)
    that it would force them to relinquish their private signing keys.
 
@@ -83,7 +83,7 @@ Now, there are two things to be said about this:
    What this means is that, unfortunately, UEFI:NTFS cannot be submitted to
    Microsoft for Secure Boot signing, as it will be automatically rejected,
    and you currently are left with no choice but to have Secure Boot disabled
-   for UEFI:NTFS to run. 
+   for UEFI:NTFS to run.
 
    And, because the NTFS driver being used is licensed under the GPLv3 (given
    that its source is derived from GRUB2, which itself is GPLv3, and I am not
@@ -147,4 +147,4 @@ Please be mindful that, to enable ARM or ARM64 compilation support in Visual Stu
 and select the ARM compilers and libraries there, as they do __NOT__ appear in the
 default _Workloads_ screen:
 
-![VS2017 Individual Components](http://files.akeo.ie/pics/VS2017_Individual_Components.png)
+![VS2017 Individual Components](https://files.akeo.ie/pics/VS2017_Individual_Components.png)
