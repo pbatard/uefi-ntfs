@@ -3,8 +3,8 @@ UEFI:NTFS - Boot NTFS partitions from UEFI
 
 UEFI:NTFS is a generic bootloader, that is designed to allow boot from an NTFS
 partition, in pure UEFI mode, even if your system does not natively support it.
-This is primarily intended for use with [Rufus](https://rufus.akeo.ie), but can
-also be used independently.
+This is primarily intended for use with [Rufus](https://rufus.ie), but can also
+be used independently.
 
 In other words, UEFI:NTFS is designed to remove the restriction, which most
 UEFI systems have, of only providing boot support from a FAT32 partition, and
@@ -98,7 +98,7 @@ Now, there are two things to be said about this:
 
 ## Prerequisites
 
-* [Visual Studio 2017](https://www.visualstudio.com/vs/community/) or
+* [Visual Studio 2019](https://www.visualstudio.com/vs/community/) or
   or [MinGW](http://www.mingw.org/)/[MinGW64](http://mingw-w64.sourceforge.net/)
   (preferably installed using [msys2](https://sourceforge.net/projects/msys2/)) or gcc
 * [QEMU](http://www.qemu.org) __v2.7 or later__
@@ -140,11 +140,11 @@ If you create a partition of the same size at the end of your drive and copy
 there (in DD mode of course), then you should have everything you need to make
 the first NTFS partition on that drive UEFI bootable.
 
-## Visual Studio 2017 and ARM support
+## Visual Studio 2019 and ARM/ARM64 support
 
 Please be mindful that, to enable ARM or ARM64 compilation support in Visual Studio
-2017, you __MUST__ go to the _Individual components_ screen in the setup application
-and select the ARM compilers and libraries there, as they do __NOT__ appear in the
-default _Workloads_ screen:
+2019, you __MUST__ go to the _Individual components_ screen in the setup application
+and select the ARM/ARM64 build tools there, as they do __NOT__ appear in the default
+_Workloads_ screen:
 
-![VS2017 Individual Components](https://files.akeo.ie/pics/VS2017_Individual_Components.png)
+![VS2019 Individual Components](https://files.akeo.ie/pics/VS2019_Individual_Components.png)
