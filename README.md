@@ -1,5 +1,5 @@
-UEFI:NTFS - Boot NTFS partitions from UEFI
-==========================================
+UEFI:NTFS - Boot NTFS or exFAT partitions from UEFI
+===================================================
 
 UEFI:NTFS is a generic bootloader, that is designed to allow boot from NTFS or
 exFAT partitions, in pure UEFI mode, even if your system does not natively

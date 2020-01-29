@@ -34,25 +34,17 @@ EFI_HANDLE MainImageHandle = NULL;
 #define SafeFree(p) do { FreePool(p); p = NULL;} while(0)
 
 #if defined(_M_X64) || defined(__x86_64__)
-// Use 'rufus' in the driver path, so that we don't accidentally latch onto a user driver
-  static CHAR16* DriverPath[2] = { L"\\efi\\rufus\\ntfs_x64.efi", L"\\efi\\rufus\\exfat_x64.efi" };
-// We'll need to fix the casing as our target is a case sensitive file system and Microsoft
-// indiscriminately seems to uses "EFI\Boot" or "efi\boot"
-  static CHAR16* LoaderPath = L"\\efi\\boot\\bootx64.efi";
-// Always good to know the arch we're running
   static CHAR16* Arch = L"x64";
+  static CHAR16* ArchName = L"64-bit x86";
 #elif defined(_M_IX86) || defined(__i386__)
-  static CHAR16* DriverPath[2] = { L"\\efi\\rufus\\ntfs_ia32.efi", L"\\efi\\rufus\\exfat_ia32.efi" };
-  static CHAR16* LoaderPath = L"\\efi\\boot\\bootia32.efi";
   static CHAR16* Arch = L"ia32";
+  static CHAR16* ArchName = L"32-bit x86";
 #elif defined (_M_ARM64) || defined(__aarch64__)
-  static CHAR16* DriverPath[2] = { L"\\efi\\rufus\\ntfs_aa64.efi", L"\\efi\\rufus\\exfat_aa64.efi" };
-  static CHAR16* LoaderPath = L"\\efi\\boot\\bootaa64.efi";
   static CHAR16* Arch = L"aa64";
+  static CHAR16* ArchName = L"64-bit ARM";
 #elif defined (_M_ARM) || defined(__arm__)
-  static CHAR16* DriverPath[2] = { L"\\efi\\rufus\\exfat_arm.efi", L"\\efi\\rufus\\exfat_arm.efi" };
-  static CHAR16* LoaderPath = L"\\efi\\boot\\bootarm.efi";
   static CHAR16* Arch = L"arm";
+  static CHAR16* ArchName = L"32-bit ARM";
 #else
 #  error Unsupported architecture
 #endif
@@ -294,7 +286,7 @@ static VOID DisconnectBlockingDrivers(VOID) {
 		// then disconnect this connection
 		Status = BS->OpenProtocolInformation(Handles[Index], &gEfiDiskIoProtocolGuid, &OpenInfo, &OpenInfoCount);
 		if (EFI_ERROR(Status)) {
-			PrintWarning(L"Could not get DiskIo protocol for %s: %r", DevicePathString, Status);
+			PrintWarning(L"  Could not get DiskIo protocol for %s: %r", DevicePathString, Status);
 			FreePool(DevicePathString);
 			continue;
 		}
@@ -303,10 +295,10 @@ static VOID DisconnectBlockingDrivers(VOID) {
 			if ((OpenInfo[OpenInfoIndex].Attributes & EFI_OPEN_PROTOCOL_BY_DRIVER) == EFI_OPEN_PROTOCOL_BY_DRIVER) {
 				Status = BS->DisconnectController(Handles[Index], OpenInfo[OpenInfoIndex].AgentHandle, NULL);
 				if (EFI_ERROR(Status)) {
-					PrintError(L"Could not disconnect '%s' on %s",
+					PrintError(L"  Could not disconnect '%s' on %s",
 						GetDriverName(OpenInfo[OpenInfoIndex].AgentHandle), DevicePathString);
 				} else {
-					PrintWarning(L"Disconnected '%s' on %s ",
+					PrintWarning(L"  Disconnected '%s' on %s ",
 						GetDriverName(OpenInfo[OpenInfoIndex].AgentHandle), DevicePathString);
 				}
 			}
@@ -324,18 +316,20 @@ static VOID DisconnectBlockingDrivers(VOID) {
 EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 {
 	CONST CHAR16* FsName[] = { L"NTFS", L"exFAT" };
+	CONST CHAR16* DriverName[] = { L"ntfs", L"exfat" };
+	CHAR16 DriverPath[64], LoaderPath[64];
 	EFI_LOADED_IMAGE_PROTOCOL *LoadedImage;
 	EFI_STATUS Status;
 	EFI_DEVICE_PATH *DevicePath, *ParentDevicePath = NULL, *BootDiskPath = NULL;
 	EFI_DEVICE_PATH *BootPartitionPath = NULL;
 	EFI_HANDLE *Handles = NULL, DriverHandle, DriverHandleList[2];
 	EFI_SIMPLE_FILE_SYSTEM_PROTOCOL* Volume;
+	EFI_FILE_SYSTEM_VOLUME_LABEL_INFO* VolumeInfo;
 	EFI_FILE_HANDLE Root;
 	EFI_BLOCK_IO_PROTOCOL *BlockIo;
 	CHAR8* Buffer, FsMagic[2][8] = { 
 		{ 'N', 'T', 'F', 'S', ' ', ' ', ' ', ' '} ,
 		{ 'E', 'X', 'F', 'A', 'T', ' ', ' ', ' '} };
-	CHAR16 *DevicePathString;
 	UINTN Index, FsType = 0, Try, Event, HandleCount = 0;
 	BOOLEAN SameDevice;
 
@@ -351,23 +345,20 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		goto out;
 	}
 
+	PrintInfo(L"Disconnecting potentially blocking drivers");
+	DisconnectBlockingDrivers();
+
 	// Identify our boot partition and disk
 	BootPartitionPath = DevicePathFromHandle(LoadedImage->DeviceHandle);
 	BootDiskPath = GetParentDevice(BootPartitionPath);
 
-	DevicePathString = DevicePathToStr(BootDiskPath);
-	PrintInfo(L"Boot disk: %s", DevicePathString);
-	FreePool(DevicePathString);
-
-	PrintInfo(L"Disconnecting possible blocking drivers");
-	DisconnectBlockingDrivers();
-
-	PrintInfo(L"Locating target partition on the boot device");
+	PrintInfo(L"Searching for target partition on boot disk:");
+	PrintInfo(L"  %D", BootDiskPath);
 	// Enumerate all disk handles
 	Status = BS->LocateHandleBuffer(ByProtocol, &gEfiDiskIoProtocolGuid,
 		NULL, &HandleCount, &Handles);
 	if (EFI_ERROR(Status)) {
-		PrintError(L"Failed to list disks");
+		PrintError(L"  Failed to list disks");
 		goto out;
 	}
 
@@ -411,89 +402,94 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 
 	if (Index >= HandleCount) {
 		Status = EFI_NOT_FOUND;
-		PrintError(L"Could not locate target partition");
+		PrintError(L"  Could not locate target partition");
 		goto out;
 	}
+	PrintInfo(L"Found %s target partition:", FsName[FsType]);
+	PrintInfo(L"  %D", DevicePath);
 
-	PrintInfo(L"Starting %s driver", FsName[FsType]);
-	DevicePath = FileDevicePath(LoadedImage->DeviceHandle, DriverPath[FsType]);
-	if (DevicePath == NULL) {
-		Status = EFI_DEVICE_ERROR;
-		PrintError(L"Unable to set path for '%s'", DriverPath[FsType]);
-		goto out;
-	}
-
-	// Attempt to load the driver.
-	Status = BS->LoadImage(FALSE, MainImageHandle, DevicePath, NULL, 0, &DriverHandle);
-	SafeFree(DevicePath);
-	if (EFI_ERROR(Status)) {
-		PrintError(L"Unable to load driver '%s'", DriverPath[FsType]);
-		goto out;
-	}
-
-	// NB: Some HP firmwares refuse to start drivers that are not of type 'EFI Boot
-	// System Driver'. For instance, a driver of type 'EFI Runtime Driver' produces
-	// a 'Load Error' on StartImage() with these firmwares => check the type.
-	Status = BS->OpenProtocol(DriverHandle, &gEfiLoadedImageProtocolGuid,
-		(VOID**)&LoadedImage, MainImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
-	if (EFI_ERROR(Status)) {
-		PrintError(L"Unable to access driver interface");
-		goto out;
-	}
-	if (LoadedImage->ImageCodeType != EfiBootServicesCode) {
-		Status = EFI_LOAD_ERROR;
-		PrintError(L"'%s' is not a Boot System Driver", DriverPath);
-		goto out;
-	}
-
-	// Load was a success - attempt to start the driver
-	Status = BS->StartImage(DriverHandle, NULL, NULL);
-	if (EFI_ERROR(Status)) {
-		PrintError(L"Unable to start driver");
-		goto out;
-	}
-	PrintInfo(L"Started driver: %s", GetDriverName(DriverHandle));
-
-	PrintInfo(L"Checking if partition needs the %s service", FsName[FsType]);
+	PrintInfo(L"Checking if target partition needs the %s service", FsName[FsType]);
 	// Test for presence of file system protocol (to see if there already is
-	// an exFAT driver servicing this partition)
+	// a filesystem driver servicing this partition)
 	Status = BS->OpenProtocol(Handles[Index], &gEfiSimpleFileSystemProtocolGuid,
 		(VOID**)&Volume, MainImageHandle, NULL, EFI_OPEN_PROTOCOL_TEST_PROTOCOL);
 	if (Status == EFI_SUCCESS) {
-		// An exFAT driver is already set => no need to start ours
-		PrintWarning(L"An %s service is already loaded", FsName[FsType]);
+		// A filesystem driver is already set => no need to start ours
+		PrintWarning(L"  An %s service is already loaded", FsName[FsType]);
 	} else if (Status == EFI_UNSUPPORTED) {
 		// Partition is not being serviced by a file system driver yet => start ours
-		PrintInfo(L"Starting %s partition service", FsName[FsType]);
+		PrintInfo(L"Starting %s partition service:", FsName[FsType]);
+
+		// Use 'rufus' in the driver path, so that we don't accidentally latch onto a user driver
+		SPrint(DriverPath, ARRAY_SIZE(DriverPath), L"\\efi\\rufus\\%s_%s.efi", DriverName[FsType], Arch);
+		DevicePath = FileDevicePath(LoadedImage->DeviceHandle, DriverPath);
+		if (DevicePath == NULL) {
+			Status = EFI_DEVICE_ERROR;
+			PrintError(L"  Unable to set path for '%s'", DriverPath);
+			goto out;
+		}
+
+		// Attempt to load the driver.
+		Status = BS->LoadImage(FALSE, MainImageHandle, DevicePath, NULL, 0, &DriverHandle);
+		SafeFree(DevicePath);
+		if (EFI_ERROR(Status)) {
+			PrintError(L"  Unable to load driver '%s'", DriverPath);
+			goto out;
+		}
+
+		// NB: Some HP firmwares refuse to start drivers that are not of type 'EFI Boot
+		// System Driver'. For instance, a driver of type 'EFI Runtime Driver' produces
+		// a 'Load Error' on StartImage() with these firmwares => check the type.
+		Status = BS->OpenProtocol(DriverHandle, &gEfiLoadedImageProtocolGuid,
+			(VOID**)&LoadedImage, MainImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
+		if (EFI_ERROR(Status)) {
+			PrintError(L"  Unable to access driver interface");
+			goto out;
+		}
+		if (LoadedImage->ImageCodeType != EfiBootServicesCode) {
+			Status = EFI_LOAD_ERROR;
+			PrintError(L"  '%s' is not a Boot System Driver", DriverPath);
+			goto out;
+		}
+
+		// Load was a success - attempt to start the driver
+		Status = BS->StartImage(DriverHandle, NULL, NULL);
+		if (EFI_ERROR(Status)) {
+			PrintError(L"  Unable to start driver");
+			goto out;
+		}
+		PrintInfo(L"  %s", GetDriverName(DriverHandle));
+
 		// Calling ConnectController() on a handle, with a NULL-terminated list of
 		// drivers will start all the drivers from the list that can service it
 		DriverHandleList[0] = DriverHandle;
 		DriverHandleList[1] = NULL;
 		Status = BS->ConnectController(Handles[Index], DriverHandleList, NULL, TRUE);
 		if (EFI_ERROR(Status)) {
-			PrintError(L"Could not start %s partition service", FsName[FsType]);
+			PrintError(L"  Could not start %s partition service", FsName[FsType]);
 			goto out;
 		}
 	} else {
-		PrintError(L"Could not check for %s service", FsName[FsType]);
+		PrintError(L"  Could not check for %s service", FsName[FsType]);
 		goto out;
 	}
 
 	// Our target file system is case sensitive, so we need to figure out the
-	// case sensitive version of LoaderPath
+	// case sensitive version of the following
+	SPrint(LoaderPath, ARRAY_SIZE(LoaderPath), L"\\efi\\boot\\boot%s.efi", Arch);
 
+	PrintInfo(L"Opening target %s partition:", FsName[FsType]);
 	// Open the the volume, with retry, as we may need to wait before poking
-	// at the exFAT content, in case the system is slow to start our service...
+	// at the FS content, in case the system is slow to start our service...
 	for (Try = 0; ; Try++) {
-		PrintInfo(L"Looking for %s EFI loader", FsName[FsType]);
 		Status = BS->OpenProtocol(Handles[Index], &gEfiSimpleFileSystemProtocolGuid,
 			(VOID**)&Volume, MainImageHandle, NULL, EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
 		if (!EFI_ERROR(Status))
 			break;
-		PrintError(L"Could not open %s volume", FsName[FsType]);
+		PrintError(L"  Could not open partition");
 		if (Try >= NUM_RETRIES)
 			goto out;
-		PrintWarning(L"Waiting %d seconds before retrying...", DELAY);
+		PrintWarning(L"  Waiting %d seconds before retrying...", DELAY);
 		BS->Stall(DELAY * 1000000);
 	}
 
@@ -501,37 +497,42 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	Root = NULL;
 	Status = Volume->OpenVolume(Volume, &Root);
 	if ((EFI_ERROR(Status)) || (Root == NULL)) {
-		PrintError(L"Could not open Root directory");
+		PrintError(L"  Could not open Root directory");
 		goto out;
 	}
+	// Get the volume label while we're at it
+	VolumeInfo = LibFileSystemVolumeLabelInfo(Root);
+	if ((VolumeInfo->VolumeLabel != NULL) && (VolumeInfo->VolumeLabel[0] != 0))
+		PrintInfo(L"  Volume label is '%s'", VolumeInfo->VolumeLabel);
 
-	// This next call will correct the casing to the required one
+	PrintInfo(L"This system uses %s UEFI => searching for %s EFI bootloader", ArchName, Arch);
+	// This next call corrects the casing to the required one
 	Status = SetPathCase(Root, LoaderPath);
 	if (EFI_ERROR(Status)) {
-		PrintError(L"Could not locate '%s'", LoaderPath);
+		PrintError(L"  Could not locate '%s'", &LoaderPath[1]);
 		goto out;
 	}
 
 	// At this stage, our DevicePath is the partition we are after
-	PrintInfo(L"Launching %s EFI loader '%s'", FsName[FsType], &LoaderPath[1]);
+	PrintInfo(L"Launching '%s'...", &LoaderPath[1]);
 
-	// Now attempt to chain load bootx64.efi on the exFAT partition
+	// Now attempt to chain load bootx64.efi on the target partition
 	DevicePath = FileDevicePath(Handles[Index], LoaderPath);
 	if (DevicePath == NULL) {
 		Status = EFI_DEVICE_ERROR;
-		PrintError(L"Could not create path");
+		PrintError(L"  Could not create path");
 		goto out;
 	}
 	Status = BS->LoadImage(FALSE, ImageHandle, DevicePath, NULL, 0, &DriverHandle);
 	SafeFree(DevicePath);
 	if (EFI_ERROR(Status)) {
-		PrintError(L"Load failure");
+		PrintError(L"  Load failure");
 		goto out;
 	}
 
 	Status = BS->StartImage(DriverHandle, NULL, NULL);
 	if (EFI_ERROR(Status))
-		PrintError(L"Start failure");
+		PrintError(L"  Start failure");
 
 out:
 	SafeFree(ParentDevicePath);
