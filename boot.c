@@ -1,6 +1,6 @@
 /*
- * uefi-ntfs: UEFI/NTFS chain loader
- * Copyright © 2014-2018 Pete Batard <pete@akeo.ie>
+ * uefi-ntfs: UEFI → NTFS/exFAT chain loader
+ * Copyright © 2014-2020 Pete Batard <pete@akeo.ie>
  * With parts from GRUB © 2006-2015 Free Software Foundation, Inc.
  * With parts from rEFInd © 2012-2016 Roderick W. Smith
  *
@@ -25,28 +25,32 @@
 #define NUM_RETRIES     1
 #define DELAY           3	// delay before retry, in seconds
 
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(Array) (sizeof (Array) / sizeof ((Array)[0]))
+#endif
+
 EFI_HANDLE MainImageHandle = NULL;
 // NB: FreePool(NULL) is perfectly valid
 #define SafeFree(p) do { FreePool(p); p = NULL;} while(0)
 
 #if defined(_M_X64) || defined(__x86_64__)
 // Use 'rufus' in the driver path, so that we don't accidentally latch onto a user driver
-  static CHAR16* DriverPath = L"\\efi\\rufus\\ntfs_x64.efi";
+  static CHAR16* DriverPath[2] = { L"\\efi\\rufus\\ntfs_x64.efi", L"\\efi\\rufus\\exfat_x64.efi" };
 // We'll need to fix the casing as our target is a case sensitive file system and Microsoft
 // indiscriminately seems to uses "EFI\Boot" or "efi\boot"
   static CHAR16* LoaderPath = L"\\efi\\boot\\bootx64.efi";
 // Always good to know the arch we're running
   static CHAR16* Arch = L"x64";
 #elif defined(_M_IX86) || defined(__i386__)
-  static CHAR16* DriverPath = L"\\efi\\rufus\\ntfs_ia32.efi";
+  static CHAR16* DriverPath[2] = { L"\\efi\\rufus\\ntfs_ia32.efi", L"\\efi\\rufus\\exfat_ia32.efi" };
   static CHAR16* LoaderPath = L"\\efi\\boot\\bootia32.efi";
   static CHAR16* Arch = L"ia32";
 #elif defined (_M_ARM64) || defined(__aarch64__)
-  static CHAR16* DriverPath = L"\\efi\\rufus\\ntfs_aa64.efi";
+  static CHAR16* DriverPath[2] = { L"\\efi\\rufus\\ntfs_aa64.efi", L"\\efi\\rufus\\exfat_aa64.efi" };
   static CHAR16* LoaderPath = L"\\efi\\boot\\bootaa64.efi";
   static CHAR16* Arch = L"aa64";
 #elif defined (_M_ARM) || defined(__arm__)
-  static CHAR16* DriverPath = L"\\efi\\rufus\\ntfs_arm.efi";
+  static CHAR16* DriverPath[2] = { L"\\efi\\rufus\\exfat_arm.efi", L"\\efi\\rufus\\exfat_arm.efi" };
   static CHAR16* LoaderPath = L"\\efi\\boot\\bootarm.efi";
   static CHAR16* Arch = L"arm";
 #else
@@ -319,6 +323,7 @@ static VOID DisconnectBlockingDrivers(VOID) {
  */
 EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 {
+	CONST CHAR16* FsName[] = { L"NTFS", L"exFAT" };
 	EFI_LOADED_IMAGE_PROTOCOL *LoadedImage;
 	EFI_STATUS Status;
 	EFI_DEVICE_PATH *DevicePath, *ParentDevicePath = NULL, *BootDiskPath = NULL;
@@ -327,10 +332,12 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	EFI_SIMPLE_FILE_SYSTEM_PROTOCOL* Volume;
 	EFI_FILE_HANDLE Root;
 	EFI_BLOCK_IO_PROTOCOL *BlockIo;
-	CHAR8 *Buffer, NTFSMagic[] = { 'N', 'T', 'F', 'S', ' ', ' ', ' ', ' '};
+	CHAR8* Buffer, FsMagic[2][8] = { 
+		{ 'N', 'T', 'F', 'S', ' ', ' ', ' ', ' '} ,
+		{ 'E', 'X', 'F', 'A', 'T', ' ', ' ', ' '} };
 	CHAR16 *DevicePathString;
-	UINTN Index, Try, Event, HandleCount = 0;
-	BOOLEAN SameDevice, NTFSPartition;
+	UINTN Index, FsType = 0, Try, Event, HandleCount = 0;
+	BOOLEAN SameDevice;
 
 	MainImageHandle = ImageHandle;
 	InitializeLib(ImageHandle, SystemTable);
@@ -355,11 +362,64 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	PrintInfo(L"Disconnecting possible blocking drivers");
 	DisconnectBlockingDrivers();
 
-	PrintInfo(L"Starting NTFS driver");
-	DevicePath = FileDevicePath(LoadedImage->DeviceHandle, DriverPath);
+	PrintInfo(L"Locating target partition on the boot device");
+	// Enumerate all disk handles
+	Status = BS->LocateHandleBuffer(ByProtocol, &gEfiDiskIoProtocolGuid,
+		NULL, &HandleCount, &Handles);
+	if (EFI_ERROR(Status)) {
+		PrintError(L"Failed to list disks");
+		goto out;
+	}
+
+	// Go through the partitions and find the one that has the USB Disk we booted from
+	// as parent and that isn't the FAT32 boot partition
+	for (Index = 0; Index < HandleCount; Index++) {
+		// Note: The Device Path obtained from DevicePathFromHandle() should NOT be freed!
+		DevicePath = DevicePathFromHandle(Handles[Index]);
+		// Eliminate the partition we booted from
+		if (CompareDevicePaths(DevicePath, BootPartitionPath) == 0)
+			continue;
+		// Ensure that we look for the NTFS/exFAT partition on the same device.
+		ParentDevicePath = GetParentDevice(DevicePath);
+		SameDevice = (CompareDevicePaths(BootDiskPath, ParentDevicePath) == 0);
+		SafeFree(ParentDevicePath);
+		// The check breaks QEMU testing (since we can't easily emulate
+		// a multipart device on the fly) so only do it for release.
+#if !defined(_DEBUG)
+		if (!SameDevice)
+			continue;
+#else
+		(VOID)SameDevice;	// Silence a MinGW warning
+#endif
+		// Read the first block of the partition and look for the FS magic in the OEM ID
+		Status = BS->OpenProtocol(Handles[Index], &gEfiBlockIoProtocolGuid,
+			(VOID**)&BlockIo, MainImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
+		if (EFI_ERROR(Status))
+			continue;
+		Buffer = (CHAR8*)AllocatePool(BlockIo->Media->BlockSize);
+		if (Buffer == NULL)
+			continue;
+		Status = BlockIo->ReadBlocks(BlockIo, BlockIo->Media->MediaId, 0, BlockIo->Media->BlockSize, Buffer);
+		for (FsType = 0; (FsType < ARRAY_SIZE(FsName)) && 
+			(CompareMem(&Buffer[3], FsMagic[FsType], sizeof(FsMagic[FsType])) != 0); FsType++);
+		FreePool(Buffer);
+		if (EFI_ERROR(Status))
+			continue;
+		if (FsType < ARRAY_SIZE(FsName))
+			break;
+	}
+
+	if (Index >= HandleCount) {
+		Status = EFI_NOT_FOUND;
+		PrintError(L"Could not locate target partition");
+		goto out;
+	}
+
+	PrintInfo(L"Starting %s driver", FsName[FsType]);
+	DevicePath = FileDevicePath(LoadedImage->DeviceHandle, DriverPath[FsType]);
 	if (DevicePath == NULL) {
 		Status = EFI_DEVICE_ERROR;
-		PrintError(L"Unable to set path for '%s'", DriverPath);
+		PrintError(L"Unable to set path for '%s'", DriverPath[FsType]);
 		goto out;
 	}
 
@@ -367,7 +427,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	Status = BS->LoadImage(FALSE, MainImageHandle, DevicePath, NULL, 0, &DriverHandle);
 	SafeFree(DevicePath);
 	if (EFI_ERROR(Status)) {
-		PrintError(L"Unable to load driver '%s'", DriverPath);
+		PrintError(L"Unable to load driver '%s'", DriverPath[FsType]);
 		goto out;
 	}
 
@@ -394,80 +454,28 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	}
 	PrintInfo(L"Started driver: %s", GetDriverName(DriverHandle));
 
-	PrintInfo(L"Locating the first NTFS partition on the boot device");
-	// Now enumerate all disk handles
-	Status = BS->LocateHandleBuffer(ByProtocol, &gEfiDiskIoProtocolGuid,
-		NULL, &HandleCount, &Handles);
-	if (EFI_ERROR(Status)) {
-		PrintError(L"Failed to list disks");
-		goto out;
-	}
-
-	// Go through the partitions and find the one that has the USB Disk we booted from
-	// as parent and that isn't the FAT32 boot partition
-	for (Index = 0; Index < HandleCount; Index++) {
-		// Note: The Device Path obtained from DevicePathFromHandle() should NOT be freed!
-		DevicePath = DevicePathFromHandle(Handles[Index]);
-		// Eliminate the partition we booted from
-		if (CompareDevicePaths(DevicePath, BootPartitionPath) == 0)
-			continue;
-		// Ensure that we look for the NTFS partition on the same device.
-		ParentDevicePath = GetParentDevice(DevicePath);
-		SameDevice = (CompareDevicePaths(BootDiskPath, ParentDevicePath) == 0);
-		SafeFree(ParentDevicePath);
-		// The check breaks QEMU testing (since we can't easily emulate
-		// a multipart device on the fly) so only do it for release.
-#if !defined(_DEBUG)
-		if (!SameDevice)
-			continue;
-#else
-		(VOID)SameDevice;	// Silence a MinGW warning
-#endif
-		// Read the first block of the partition and look for the NTFS magic in the OEM ID
-		Status = BS->OpenProtocol(Handles[Index], &gEfiBlockIoProtocolGuid,
-			(VOID**) &BlockIo, MainImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
-		if (EFI_ERROR(Status))
-			continue;
-		Buffer = (CHAR8*)AllocatePool(BlockIo->Media->BlockSize);
-		if (Buffer == NULL)
-			continue;
-		Status = BlockIo->ReadBlocks(BlockIo, BlockIo->Media->MediaId, 0, BlockIo->Media->BlockSize, Buffer);
-		NTFSPartition = (CompareMem(&Buffer[3], NTFSMagic, sizeof(NTFSMagic)) == 0);
-		FreePool(Buffer);
-		if (EFI_ERROR(Status))
-			continue;
-		if (NTFSPartition)
-			break;
-	}
-
-	if (Index >= HandleCount) {
-		Status = EFI_NOT_FOUND;
-		PrintError(L"Could not locate NTFS partition");
-		goto out;
-	}
-
-	PrintInfo(L"Checking if partition needs the NTFS service");
+	PrintInfo(L"Checking if partition needs the %s service", FsName[FsType]);
 	// Test for presence of file system protocol (to see if there already is
-	// an NTFS driver servicing this partition)
+	// an exFAT driver servicing this partition)
 	Status = BS->OpenProtocol(Handles[Index], &gEfiSimpleFileSystemProtocolGuid,
 		(VOID**)&Volume, MainImageHandle, NULL, EFI_OPEN_PROTOCOL_TEST_PROTOCOL);
 	if (Status == EFI_SUCCESS) {
-		// An NTFS driver is already set => no need to start ours
-		PrintWarning(L"An NTFS service is already loaded");
+		// An exFAT driver is already set => no need to start ours
+		PrintWarning(L"An %s service is already loaded", FsName[FsType]);
 	} else if (Status == EFI_UNSUPPORTED) {
 		// Partition is not being serviced by a file system driver yet => start ours
-		PrintInfo(L"Starting NTFS partition service");
+		PrintInfo(L"Starting %s partition service", FsName[FsType]);
 		// Calling ConnectController() on a handle, with a NULL-terminated list of
 		// drivers will start all the drivers from the list that can service it
 		DriverHandleList[0] = DriverHandle;
 		DriverHandleList[1] = NULL;
 		Status = BS->ConnectController(Handles[Index], DriverHandleList, NULL, TRUE);
 		if (EFI_ERROR(Status)) {
-			PrintError(L"Could not start NTFS partition service");
+			PrintError(L"Could not start %s partition service", FsName[FsType]);
 			goto out;
 		}
 	} else {
-		PrintError(L"Could not check for NTFS service");
+		PrintError(L"Could not check for %s service", FsName[FsType]);
 		goto out;
 	}
 
@@ -475,14 +483,14 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	// case sensitive version of LoaderPath
 
 	// Open the the volume, with retry, as we may need to wait before poking
-	// at the NTFS content, in case the system is slow to start our service...
+	// at the exFAT content, in case the system is slow to start our service...
 	for (Try = 0; ; Try++) {
-		PrintInfo(L"Looking for NTFS EFI loader");
+		PrintInfo(L"Looking for %s EFI loader", FsName[FsType]);
 		Status = BS->OpenProtocol(Handles[Index], &gEfiSimpleFileSystemProtocolGuid,
 			(VOID**)&Volume, MainImageHandle, NULL, EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
 		if (!EFI_ERROR(Status))
 			break;
-		PrintError(L"Could not open NTFS volume");
+		PrintError(L"Could not open %s volume", FsName[FsType]);
 		if (Try >= NUM_RETRIES)
 			goto out;
 		PrintWarning(L"Waiting %d seconds before retrying...", DELAY);
@@ -505,9 +513,9 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	}
 
 	// At this stage, our DevicePath is the partition we are after
-	PrintInfo(L"Launching NTFS EFI loader '%s'", &LoaderPath[1]);
+	PrintInfo(L"Launching %s EFI loader '%s'", FsName[FsType], &LoaderPath[1]);
 
-	// Now attempt to chain load bootx64.efi on the NTFS partition
+	// Now attempt to chain load bootx64.efi on the exFAT partition
 	DevicePath = FileDevicePath(Handles[Index], LoaderPath);
 	if (DevicePath == NULL) {
 		Status = EFI_DEVICE_ERROR;

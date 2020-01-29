@@ -1,8 +1,9 @@
 UEFI:NTFS - Boot NTFS partitions from UEFI
 ==========================================
 
-UEFI:NTFS is a generic bootloader, that is designed to allow boot from an NTFS
-partition, in pure UEFI mode, even if your system does not natively support it.
+UEFI:NTFS is a generic bootloader, that is designed to allow boot from NTFS or
+exFAT partitions, in pure UEFI mode, even if your system does not natively
+support it.
 This is primarily intended for use with [Rufus](https://rufus.ie), but can also
 be used independently.
 

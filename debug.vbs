@@ -12,6 +12,8 @@ QEMU_PATH  = "C:\Program Files\qemu\"
 QEMU_OPTS  = "-nodefaults -vga std -serial vc"
 ' Set to True if you need to download a file that might be cached locally
 NO_CACHE   = False
+' Change the following to "exfat" if you want to test exFAT instead of NTFS
+FS         = "ntfs"
 
 ' You shouldn't have to mofify anything below this
 CONF       = WScript.Arguments(0)
@@ -49,11 +51,11 @@ FW_ZIP     = FW_BASE & "-" & FW_ARCH & ".zip"
 FW_FILE    = FW_BASE & "_" & FW_ARCH & ".fd"
 FW_URL     = FW_DIR & FW_ZIP
 QEMU_EXE   = "qemu-system-" & QEMU_ARCH & "w.exe"
-VHD_ZIP    = "ntfs.zip"
-VHD_IMG    = "ntfs.vhd"
+VHD_ZIP    = FS & ".zip"
+VHD_IMG    = FS & ".vhd"
 VHD_URL    = "https://efi.akeo.ie/test/" & VHD_ZIP
-DRV        = "ntfs_" & UEFI_EXT & ".efi"
-DRV_URL    = "https://efi.akeo.ie/downloads/efifs-latest//" & UEFI_EXT & "/" & DRV
+DRV        = FS & "_" & UEFI_EXT & ".efi"
+DRV_URL    = "https://efi.akeo.ie/downloads/efifs-latest/" & UEFI_EXT & "/" & DRV
 
 ' Globals
 Set fso = CreateObject("Scripting.FileSystemObject")
@@ -84,7 +86,7 @@ Sub DownloadHttp(Url, File)
   End If
   Call xHttp.Send()
   If Not xHttp.Status = 200 Then
-    Call WScript.Echo("Unable to access file - Error " & xHttp.Status)
+    Call WScript.Echo("Unable to access " & Url & " - Error " & xHttp.Status)
     Call WScript.Quit(1)
   End If
   With bStrm
@@ -166,4 +168,4 @@ Call shell.Run("%COMSPEC% /c mkdir ""image\efi\boot""", 0, True)
 Call fso.CopyFile(BIN, "image\efi\boot\" & BOOT_NAME, True)
 Call shell.Run("%COMSPEC% /c mkdir ""image\efi\rufus""", 0, True)
 Call fso.CopyFile(DRV, "image\efi\rufus\" & DRV, True)
-Call shell.Run("""" & QEMU_PATH & QEMU_EXE & """ " & QEMU_OPTS & " -L . -bios " & FW_FILE & " -hda fat:rw:image -hdb ntfs.vhd", 1, True)
+Call shell.Run("""" & QEMU_PATH & QEMU_EXE & """ " & QEMU_OPTS & " -L . -bios " & FW_FILE & " -hda fat:rw:image -hdb " & VHD_IMG , 1, True)
