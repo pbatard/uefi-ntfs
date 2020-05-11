@@ -422,6 +422,11 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\gnu-efi\inc\efi.h" />
+    <ClInclude Include="..\gnu-efi\inc\efilib.h" />
+    <ClInclude Include="..\gnu-efi\inc\efistdarg.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

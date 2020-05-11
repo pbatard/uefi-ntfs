@@ -62,6 +62,42 @@ EFI_HANDLE MainImageHandle = NULL;
 #define PrintWarning(fmt, ...) Print(L"%E[WARN] " fmt L"%N\n", ##__VA_ARGS__);
 #define PrintError(fmt, ...) Print(L"%E[FAIL] " fmt L": [%d] %r%N\n", ##__VA_ARGS__, (Status&0x7FFFFFFF), Status);
 
+/* Convenience debug function to display an hex dump of a buffer */
+#if defined(_DEBUG)
+static VOID DumpBufferHex(VOID * Buf, INTN Size)
+{
+	UINT8* Buffer = (UINT8*)Buf;
+	INTN i, j, k;
+	CHAR16 Line[80] = L"";
+
+	for (i = 0; i < Size; i += 16) {
+		if (i != 0)
+			Print(L"%s\n", Line);
+		Line[0] = 0;
+		SPrint(&Line[StrLen(Line)], 80 - StrLen(Line), L"  %08x  ", (UINTN)i);
+		for (j = 0, k = 0; k < 16; j++, k++) {
+			if (i + j < Size) {
+				SPrint(&Line[StrLen(Line)], 80 - StrLen(Line), L"%02x", Buffer[i + j]);
+			} else {
+				SPrint(&Line[StrLen(Line)], 80 - StrLen(Line), L"  ");
+			}
+			SPrint(&Line[StrLen(Line)], 80 - StrLen(Line), L" ");
+		}
+		SPrint(&Line[StrLen(Line)], 80 - StrLen(Line), L" ");
+		for (j = 0, k = 0; k < 16; j++, k++) {
+			if (i + j < Size) {
+				if ((Buffer[i + j] < 32) || (Buffer[i + j] > 126)) {
+					SPrint(&Line[StrLen(Line)], 80 - StrLen(Line), L".");
+				} else {
+					SPrint(&Line[StrLen(Line)], 80 - StrLen(Line), L"%c", Buffer[i + j]);
+				}
+			}
+		}
+	}
+	Print(L"%s\n", Line);
+}
+#endif
+
 /* Return the device path node right before the end node */
 static EFI_DEVICE_PATH* GetLastDevicePath(CONST EFI_DEVICE_PATH_PROTOCOL* dp)
 {
@@ -224,13 +260,13 @@ static CHAR16* GetDriverName(CONST EFI_HANDLE DriverHandle)
 	EFI_COMPONENT_NAME2_PROTOCOL *ComponentName2;
 
 	// Try EFI_COMPONENT_NAME2 protocol first
-	if ( (BS->OpenProtocol(DriverHandle, &ComponentName2Protocol, (VOID**)&ComponentName2,
+	if ( (gBS->OpenProtocol(DriverHandle, &ComponentName2Protocol, (VOID**)&ComponentName2,
 			MainImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL) == EFI_SUCCESS) &&
 		 (ComponentName2->GetDriverName(ComponentName2, (CHAR8*)"", &DriverName) == EFI_SUCCESS) )
 		return DriverName;
 
 	// Fallback to EFI_COMPONENT_NAME if that didn't work
-	if ( (BS->OpenProtocol(DriverHandle, &ComponentNameProtocol, (VOID**)&ComponentName,
+	if ( (gBS->OpenProtocol(DriverHandle, &ComponentNameProtocol, (VOID**)&ComponentName,
 			MainImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL) == EFI_SUCCESS) &&
 		 (ComponentName->GetDriverName(ComponentName, (CHAR8*)"", &DriverName) == EFI_SUCCESS) )
 		return DriverName;
@@ -256,7 +292,7 @@ static VOID DisconnectBlockingDrivers(VOID) {
 	EFI_OPEN_PROTOCOL_INFORMATION_ENTRY *OpenInfo;
 
 	// Get all DiskIo handles
-	Status = BS->LocateHandleBuffer(ByProtocol, &gEfiDiskIoProtocolGuid, NULL, &HandleCount, &Handles);
+	Status = gBS->LocateHandleBuffer(ByProtocol, &gEfiDiskIoProtocolGuid, NULL, &HandleCount, &Handles);
 	if (EFI_ERROR(Status) || (HandleCount == 0))
 		return;
 
@@ -266,7 +302,7 @@ static VOID DisconnectBlockingDrivers(VOID) {
 		// This is then whole disk and DiskIo
 		// should be opened here BY_DRIVER by Partition driver
 		// to produce partition volumes.
-		Status = BS->OpenProtocol(Handles[Index], &gEfiBlockIoProtocolGuid, (VOID**)&BlockIo,
+		Status = gBS->OpenProtocol(Handles[Index], &gEfiBlockIoProtocolGuid, (VOID**)&BlockIo,
 			MainImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
 
 		if (EFI_ERROR(Status))
@@ -275,7 +311,7 @@ static VOID DisconnectBlockingDrivers(VOID) {
 			continue;
 
 		// If SimpleFileSystem is already produced - skip it, this is ok
-		Status = BS->OpenProtocol(Handles[Index], &gEfiSimpleFileSystemProtocolGuid, (VOID**)&Volume,
+		Status = gBS->OpenProtocol(Handles[Index], &gEfiSimpleFileSystemProtocolGuid, (VOID**)&Volume,
 			MainImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
 		if (Status == EFI_SUCCESS)
 			continue;
@@ -284,7 +320,7 @@ static VOID DisconnectBlockingDrivers(VOID) {
 
 		// If no SimpleFileSystem on this handle but DiskIo is opened BY_DRIVER
 		// then disconnect this connection
-		Status = BS->OpenProtocolInformation(Handles[Index], &gEfiDiskIoProtocolGuid, &OpenInfo, &OpenInfoCount);
+		Status = gBS->OpenProtocolInformation(Handles[Index], &gEfiDiskIoProtocolGuid, &OpenInfo, &OpenInfoCount);
 		if (EFI_ERROR(Status)) {
 			PrintWarning(L"  Could not get DiskIo protocol for %s: %r", DevicePathString, Status);
 			FreePool(DevicePathString);
@@ -293,7 +329,7 @@ static VOID DisconnectBlockingDrivers(VOID) {
 
 		for (OpenInfoIndex = 0; OpenInfoIndex < OpenInfoCount; OpenInfoIndex++) {
 			if ((OpenInfo[OpenInfoIndex].Attributes & EFI_OPEN_PROTOCOL_BY_DRIVER) == EFI_OPEN_PROTOCOL_BY_DRIVER) {
-				Status = BS->DisconnectController(Handles[Index], OpenInfo[OpenInfoIndex].AgentHandle, NULL);
+				Status = gBS->DisconnectController(Handles[Index], OpenInfo[OpenInfoIndex].AgentHandle, NULL);
 				if (EFI_ERROR(Status)) {
 					PrintError(L"  Could not disconnect '%s' on %s",
 						GetDriverName(OpenInfo[OpenInfoIndex].AgentHandle), DevicePathString);
@@ -338,7 +374,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 
 	Print(L"\n%H*** UEFI:NTFS (%s) ***%N\n\n", Arch);
 
-	Status = BS->OpenProtocol(MainImageHandle, &gEfiLoadedImageProtocolGuid,
+	Status = gBS->OpenProtocol(MainImageHandle, &gEfiLoadedImageProtocolGuid,
 		(VOID**)&LoadedImage, MainImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
 	if (EFI_ERROR(Status)) {
 		PrintError(L"Unable to access boot image interface");
@@ -355,7 +391,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	PrintInfo(L"Searching for target partition on boot disk:");
 	PrintInfo(L"  %D", BootDiskPath);
 	// Enumerate all disk handles
-	Status = BS->LocateHandleBuffer(ByProtocol, &gEfiDiskIoProtocolGuid,
+	Status = gBS->LocateHandleBuffer(ByProtocol, &gEfiDiskIoProtocolGuid,
 		NULL, &HandleCount, &Handles);
 	if (EFI_ERROR(Status)) {
 		PrintError(L"  Failed to list disks");
@@ -383,7 +419,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		(VOID)SameDevice;	// Silence a MinGW warning
 #endif
 		// Read the first block of the partition and look for the FS magic in the OEM ID
-		Status = BS->OpenProtocol(Handles[Index], &gEfiBlockIoProtocolGuid,
+		Status = gBS->OpenProtocol(Handles[Index], &gEfiBlockIoProtocolGuid,
 			(VOID**)&BlockIo, MainImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
 		if (EFI_ERROR(Status))
 			continue;
@@ -411,7 +447,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	PrintInfo(L"Checking if target partition needs the %s service", FsName[FsType]);
 	// Test for presence of file system protocol (to see if there already is
 	// a filesystem driver servicing this partition)
-	Status = BS->OpenProtocol(Handles[Index], &gEfiSimpleFileSystemProtocolGuid,
+	Status = gBS->OpenProtocol(Handles[Index], &gEfiSimpleFileSystemProtocolGuid,
 		(VOID**)&Volume, MainImageHandle, NULL, EFI_OPEN_PROTOCOL_TEST_PROTOCOL);
 	if (Status == EFI_SUCCESS) {
 		// A filesystem driver is already set => no need to start ours
@@ -430,7 +466,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		}
 
 		// Attempt to load the driver.
-		Status = BS->LoadImage(FALSE, MainImageHandle, DevicePath, NULL, 0, &DriverHandle);
+		Status = gBS->LoadImage(FALSE, MainImageHandle, DevicePath, NULL, 0, &DriverHandle);
 		SafeFree(DevicePath);
 		if (EFI_ERROR(Status)) {
 			PrintError(L"  Unable to load driver '%s'", DriverPath);
@@ -440,7 +476,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		// NB: Some HP firmwares refuse to start drivers that are not of type 'EFI Boot
 		// System Driver'. For instance, a driver of type 'EFI Runtime Driver' produces
 		// a 'Load Error' on StartImage() with these firmwares => check the type.
-		Status = BS->OpenProtocol(DriverHandle, &gEfiLoadedImageProtocolGuid,
+		Status = gBS->OpenProtocol(DriverHandle, &gEfiLoadedImageProtocolGuid,
 			(VOID**)&LoadedImage, MainImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
 		if (EFI_ERROR(Status)) {
 			PrintError(L"  Unable to access driver interface");
@@ -453,7 +489,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		}
 
 		// Load was a success - attempt to start the driver
-		Status = BS->StartImage(DriverHandle, NULL, NULL);
+		Status = gBS->StartImage(DriverHandle, NULL, NULL);
 		if (EFI_ERROR(Status)) {
 			PrintError(L"  Unable to start driver");
 			goto out;
@@ -464,7 +500,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		// drivers will start all the drivers from the list that can service it
 		DriverHandleList[0] = DriverHandle;
 		DriverHandleList[1] = NULL;
-		Status = BS->ConnectController(Handles[Index], DriverHandleList, NULL, TRUE);
+		Status = gBS->ConnectController(Handles[Index], DriverHandleList, NULL, TRUE);
 		if (EFI_ERROR(Status)) {
 			PrintError(L"  Could not start %s partition service", FsName[FsType]);
 			goto out;
@@ -482,7 +518,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	// Open the the volume, with retry, as we may need to wait before poking
 	// at the FS content, in case the system is slow to start our service...
 	for (Try = 0; ; Try++) {
-		Status = BS->OpenProtocol(Handles[Index], &gEfiSimpleFileSystemProtocolGuid,
+		Status = gBS->OpenProtocol(Handles[Index], &gEfiSimpleFileSystemProtocolGuid,
 			(VOID**)&Volume, MainImageHandle, NULL, EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
 		if (!EFI_ERROR(Status))
 			break;
@@ -490,7 +526,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		if (Try >= NUM_RETRIES)
 			goto out;
 		PrintWarning(L"  Waiting %d seconds before retrying...", DELAY);
-		BS->Stall(DELAY * 1000000);
+		gBS->Stall(DELAY * 1000000);
 	}
 
 	// Open the root directory
@@ -523,14 +559,14 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		PrintError(L"  Could not create path");
 		goto out;
 	}
-	Status = BS->LoadImage(FALSE, ImageHandle, DevicePath, NULL, 0, &DriverHandle);
+	Status = gBS->LoadImage(FALSE, ImageHandle, DevicePath, NULL, 0, &DriverHandle);
 	SafeFree(DevicePath);
 	if (EFI_ERROR(Status)) {
 		PrintError(L"  Load failure");
 		goto out;
 	}
 
-	Status = BS->StartImage(DriverHandle, NULL, NULL);
+	Status = gBS->StartImage(DriverHandle, NULL, NULL);
 	if (EFI_ERROR(Status))
 		PrintError(L"  Start failure");
 
@@ -542,8 +578,8 @@ out:
 	// Wait for a keystroke on error
 	if (EFI_ERROR(Status)) {
 		Print(L"%H\nPress any key to exit.%N\n");
-		ST->ConIn->Reset(ST->ConIn, FALSE);
-		ST->BootServices->WaitForEvent(1, &ST->ConIn->WaitForKey, &Event);
+		gST->ConIn->Reset(gST->ConIn, FALSE);
+		gST->BootServices->WaitForEvent(1, &gST->ConIn->WaitForKey, &Event);
 	}
 
 	return Status;
