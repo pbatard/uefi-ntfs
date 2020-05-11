@@ -426,6 +426,7 @@
     <ClInclude Include="..\gnu-efi\inc\efi.h" />
     <ClInclude Include="..\gnu-efi\inc\efilib.h" />
     <ClInclude Include="..\gnu-efi\inc\efistdarg.h" />
+    <ClInclude Include="..\gnu-efi\inc\libsmbios.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
