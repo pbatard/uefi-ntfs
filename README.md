@@ -100,7 +100,7 @@ Now, there are two things to be said about this:
 ## Prerequisites
 
 * [Visual Studio 2019](https://www.visualstudio.com/vs/community/) or
-  or [MinGW](http://www.mingw.org/)/[MinGW64](http://mingw-w64.sourceforge.net/)
+  [MinGW](http://www.mingw.org/)/[MinGW64](http://mingw-w64.sourceforge.net/)
   (preferably installed using [msys2](https://sourceforge.net/projects/msys2/)) or gcc
 * [QEMU](http://www.qemu.org) __v2.7 or later__
   (NB: You can find QEMU Windows binaries [here](https://qemu.weilnetz.de/w64/))
