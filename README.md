@@ -15,7 +15,7 @@ This can be used, for instance, to UEFI-boot a Windows NTFS installation media,
 containing an `install.wim` that is larger than 4 GB (something FAT32 cannot
 support) or to allow dual BIOS + UEFI boot of 'Windows To Go' drives.
 
-As an aside, and because there appears to exist a lot of innacurate information
+As an aside, and because there appears to exist a lot of inaccurate information
 about this on the Internet, it needs to be stressed out that there is absolutely
 nothing in the UEFI specifications that actually forces the use of FAT32 for
 UEFI boot. On the contrary, UEFI will happily boot from __ANY__ file system,
