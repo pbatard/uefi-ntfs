@@ -1,6 +1,6 @@
 /*
  * uefi-ntfs: UEFI → NTFS/exFAT chain loader
- * Copyright © 2014-2020 Pete Batard <pete@akeo.ie>
+ * Copyright © 2014-2021 Pete Batard <pete@akeo.ie>
  * With parts from GRUB © 2006-2015 Free Software Foundation, Inc.
  * With parts from rEFInd © 2012-2016 Roderick W. Smith
  *
@@ -31,6 +31,8 @@
 #endif
 
 EFI_HANDLE MainImageHandle = NULL;
+// Tri-state status for Secure Boot: -1 = Setup, 0 = Disabled, 1 = Enabled
+INTN SecureBootStatus = 0;
 // NB: FreePool(NULL) is perfectly valid
 #define SafeFree(p) do { FreePool(p); p = NULL;} while(0)
 
@@ -59,9 +61,9 @@ EFI_HANDLE MainImageHandle = NULL;
  *   %V       Set output attribute to green color
  *   %r       Human readable version of a status code
  */
-#define PrintInfo(fmt, ...) Print(L"[INFO] " fmt L"\n", ##__VA_ARGS__);
-#define PrintWarning(fmt, ...) Print(L"%E[WARN] " fmt L"%N\n", ##__VA_ARGS__);
-#define PrintError(fmt, ...) Print(L"%E[FAIL] " fmt L": [%d] %r%N\n", ##__VA_ARGS__, (Status&0x7FFFFFFF), Status);
+#define PrintInfo(fmt, ...) Print(L"[INFO] " fmt L"\n", ##__VA_ARGS__)
+#define PrintWarning(fmt, ...) Print(L"%E[WARN] " fmt L"%N\n", ##__VA_ARGS__)
+#define PrintError(fmt, ...) Print(L"%E[FAIL] " fmt L": [%d] %r%N\n", ##__VA_ARGS__, (Status&0x7FFFFFFF), Status)
 
 /* Convenience debug function to display an hex dump of a buffer */
 #if defined(_DEBUG)
@@ -348,6 +350,7 @@ static VOID DisconnectBlockingDrivers(VOID) {
 
 /*
  * Query SMBIOS to display some info about the system hardware and UEFI firmware.
+ * Also display the current Secure Boot status.
  */
 static EFI_STATUS PrintSystemInfo(VOID)
 {
@@ -355,7 +358,7 @@ static EFI_STATUS PrintSystemInfo(VOID)
 	SMBIOS_STRUCTURE_POINTER Smbios;
 	SMBIOS_STRUCTURE_TABLE* SmbiosTable;
 	SMBIOS3_STRUCTURE_TABLE* Smbios3Table;
-	UINT8 Found = 0, *Raw;
+	UINT8 Found = 0, *Raw, *SecureBoot, *SetupMode;
 	UINTN MaximumSize, ProcessedSize = 0;
 
 	PrintInfo(L"UEFI v%d.%d (%s, 0x%08X)", gST->Hdr.Revision >> 16, gST->Hdr.Revision & 0xFFFF,
@@ -393,6 +396,19 @@ static EFI_STATUS PrintSystemInfo(VOID)
 		}
 	}
 
+	SecureBoot = LibGetVariable(L"SecureBoot", &EfiGlobalVariable);
+	SetupMode = LibGetVariable(L"SetupMode", &EfiGlobalVariable);
+	SecureBootStatus = ((SecureBoot != NULL) && (*SecureBoot != 0)) ? 1 : 0;
+	if ((SetupMode != NULL) && (*SetupMode != 0))
+		SecureBootStatus = -1;
+	// Wasteful, but we can't highlight "Enabled"/"Setup" from a %s argument...
+	if (SecureBootStatus > 0)
+		PrintInfo(L"Secure Boot status: %HEnabled%N");
+	else if (SecureBootStatus < 0)
+		PrintInfo(L"Secure Boot status: %ESetup%N");
+	else
+		PrintInfo(L"Secure Boot status: Disabled");
+
 	return EFI_SUCCESS;
 }
 
@@ -420,8 +436,13 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	UINTN Index, FsType = 0, Try, Event, HandleCount = 0;
 	BOOLEAN SameDevice;
 
-	MainImageHandle = ImageHandle;
+#if defined(_GNU_EFI)
 	InitializeLib(ImageHandle, SystemTable);
+#endif
+	MainImageHandle = ImageHandle;
+
+	// The platform logo may still be displayed → remove it
+	SystemTable->ConOut->ClearScreen(SystemTable->ConOut);
 
 	Print(L"\n%H*** UEFI:NTFS (%s) ***%N\n\n", Arch);
 	PrintSystemInfo();
@@ -518,9 +539,15 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		}
 
 		// Attempt to load the driver.
+		// NB: If running in a Secure Boot enabled environment, LoadImage() will fail if
+		// the image being loaded does not pass the Secure Boot signature validation.
 		Status = gBS->LoadImage(FALSE, MainImageHandle, DevicePath, NULL, 0, &DriverHandle);
 		SafeFree(DevicePath);
 		if (EFI_ERROR(Status)) {
+			// Some platforms (e.g. Intel NUCs) return EFI_ACCESS_DENIED for Secure Boot
+			// validation errors. Return a much more explicit EFI_SECURITY_VIOLATION then.
+			if ((Status == EFI_ACCESS_DENIED) && (SecureBootStatus > 1))
+				Status = EFI_SECURITY_VIOLATION;
 			PrintError(L"  Unable to load driver '%s'", DriverPath);
 			goto out;
 		}
@@ -614,6 +641,8 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	Status = gBS->LoadImage(FALSE, ImageHandle, DevicePath, NULL, 0, &DriverHandle);
 	SafeFree(DevicePath);
 	if (EFI_ERROR(Status)) {
+		if ((Status == EFI_ACCESS_DENIED) && (SecureBootStatus > 1))
+			Status = EFI_SECURITY_VIOLATION;
 		PrintError(L"  Load failure");
 		goto out;
 	}
