@@ -1,0 +1,39 @@
+name: Windows (MSVC with gnu-efi) build
+
+on: push
+
+env:
+  SOLUTION_FILE_PATH: ./uefi-ntfs.sln
+  BUILD_CONFIGURATION: Release
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    strategy:
+      matrix:
+        TARGET_PLATFORM: [x64, ia32, aa64, arm]
+
+    steps:
+    - name: Check out repository and submodules
+      uses: actions/checkout@v2
+      with:
+        submodules: recursive
+
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v1
+
+    - name: Build UEFI bootloader
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: |
+        msbuild ${{env.SOLUTION_FILE_PATH}} /m /p:Configuration=${{env.BUILD_CONFIGURATION}},Platform=${{matrix.TARGET_PLATFORM}}
+        copy ${{matrix.TARGET_PLATFORM}}\${{env.BUILD_CONFIGURATION}}\*.efi .
+
+    - name: Display SHA-256
+      run: Get-FileHash *.efi
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: uefi-ntfs
+        path: ./*.efi
