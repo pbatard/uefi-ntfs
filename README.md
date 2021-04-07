@@ -71,31 +71,35 @@ Now, there are two things to be said about this:
    Secure Boot.
 
    However, this is not possible because Microsoft have __arbitrarily__
-   decided that [they would not sign anything that is GPLv3](https://techcommunity.microsoft.com/t5/Windows-Hardware-Certification/Microsoft-UEFI-CA-Signing-policy-updates/ba-p/364828)
+   decided that [they would not sign anything that is GPLv3](https://techcommunity.microsoft.com/t5/hardware-dev-center/updated-uefi-signing-requirements/ba-p/1062916)
    under the [false pretence](https://www.gnu.org/licenses/gpl-faq.en.html#GiveUpKeys)
-   that it would force them to relinquish their private signing keys.
+   that it would force them to relinquish their private signing keys, when it
+   is clear that the current implementation of Secure Boot (that allows users
+   to disable Secure Boot altogether, or set their own keys, or use Microsoft
+   services to sign their work for Secure Boot) is more than enough to meet
+   any of the GPLv3 requirements.
 
-   Of course, this is __hyperbolic nonsense__ since all the GPLv3 mandates is
-   that your system cannot lock users out from running their own code if they
-   choose so, which, as long as you follow the UEFI guidelines, Secure Boot
-   should never do, as it has clear provisions for allowing users to install
-   their own keys.
+   So, this "no GPLv3" provision from Microsoft's Secure Boot signing terms
+   can only be qualified as __hyperbolic nonsense__ since all the GPLv3
+   mandates is that your system cannot lock users out from running their own
+   code if they  choose so, which, as long as you follow the UEFI guidelines,
+   Secure Boot should never do.
 
    What this means is that, unfortunately, UEFI:NTFS cannot be submitted to
-   Microsoft for Secure Boot signing, as it will be automatically rejected,
-   and you currently are left with no choice but to have Secure Boot disabled
-   for UEFI:NTFS to run.
+   Microsoft for Secure Boot signing, as, even as the core bootloader source
+   is GPLv2 (which can be signed), the underlying NTFS driver, which needs to
+   be loaded by the GPLv2 bootloader (and therefore would need to be Secure
+   Boot signed) is itself GPLv3, as it was derived from the GRUB 2.0 project.
+   This, in turn, means that it will not be signed by Microsoft, which means
+   that you have no choice but to have Secure Boot disabled for UEFI:NTFS to
+   run.
 
-   And, because the NTFS driver being used is licensed under the GPLv3 (given
-   that its source is derived from GRUB2, which itself is GPLv3, and I am not
-   willing to rewrite an NTFS driver from scratch, especially it means giving
-   up on the license that I see as best for user rights), it is not possible
-   to relicense UEFI:NTFS to anything else but GPLv3.
-
-   Still, if you are unhappy about this situation in any way, I would
-   strongly encourage you to contact Microsoft to complain about their blatant
-   abuse of power, and their use of using easily refutable "arguments" to
-   propagate their [long standing dislike of the GPL license](https://www.theregister.co.uk/2001/06/02/ballmer_linux_is_a_cancer/).
+   Still, if you are unhappy about this situation, I would strongly encourage
+   you to contact Microsoft to complain about what can only be seen as clear
+   abuse of power and ask them to clarify why they are still putting forward
+   the easily disprovable argument that the terms of the GPLv3 would somehow
+   force them to relinquish their private keys (which is the official reason
+   they have been giving as justification for refusing to sign GPLv3 works).
 
 ## Prerequisites
 

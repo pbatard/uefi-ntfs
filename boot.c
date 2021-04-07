@@ -1,12 +1,12 @@
 /*
  * uefi-ntfs: UEFI → NTFS/exFAT chain loader
  * Copyright © 2014-2021 Pete Batard <pete@akeo.ie>
- * With parts from GRUB © 2006-2015 Free Software Foundation, Inc.
+ * With parts from GRUB © 2006 Free Software Foundation, Inc.
  * With parts from rEFInd © 2012-2016 Roderick W. Smith
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -140,7 +140,12 @@ static EFI_DEVICE_PATH* GetParentDevice(CONST EFI_DEVICE_PATH* DevicePath)
 	return dp;
 }
 
-/* Compare device paths */
+/*
+ * Compare two device paths for equality.
+ *
+ * Note that this code was derived from the the GPLv2+ version of compare_device_paths() found at:
+ * https://git.savannah.gnu.org/cgit/grub.git/tree/disk/efi/efidisk.c?id=3572d015fdd9bbd1d17bc45a1f0f0b749e7a3d38#n92
+ */
 static INTN CompareDevicePaths(CONST EFI_DEVICE_PATH *dp1, CONST EFI_DEVICE_PATH *dp2)
 {
 	if (dp1 == NULL || dp2 == NULL)
@@ -284,6 +289,10 @@ static CHAR16* GetDriverName(CONST EFI_HANDLE DriverHandle)
  * and producing file systems.
  * To fix it we disconnect drivers that connected to DiskIo BY_DRIVER if this
  * is a partition volume and if those drivers did not produce file system.
+ *
+ * This code was originally derived from similar BSD-3-Clause license one
+ * (a.k.a. Modified BSD License, which can be used in GPLv2+ works), found at:
+ * https://sourceforge.net/p/cloverefiboot/code/3294/tree/rEFIt_UEFI/refit/main.c#l1271
  */
 static VOID DisconnectBlockingDrivers(VOID) {
 	EFI_STATUS Status;
