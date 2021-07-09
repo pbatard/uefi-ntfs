@@ -24,7 +24,6 @@ jobs:
       uses: microsoft/setup-msbuild@v1
 
     - name: Build UEFI bootloader
-      working-directory: ${{env.GITHUB_WORKSPACE}}
       run: |
         msbuild ${{env.SOLUTION_FILE_PATH}} /m /p:Configuration=${{env.BUILD_CONFIGURATION}},Platform=${{matrix.TARGET_PLATFORM}}
         copy ${{matrix.TARGET_PLATFORM}}\${{env.BUILD_CONFIGURATION}}\*.efi .

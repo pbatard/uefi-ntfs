@@ -1,4 +1,5 @@
 [![Build status](https://img.shields.io/github/workflow/status/pbatard/uefi-ntfs/Windows%20%28MSVC%20with%20gnu-efi%29%20build.svg?style=flat-square)](https://github.com/pbatard/uefi-ntfs/actions)
+[![Coverity Scan Build Status](https://img.shields.io/coverity/scan/23361.svg?style=flat-square)](https://scan.coverity.com/projects/pbatard-uefi-ntfs)
 [![Licence](https://img.shields.io/badge/license-GPLv2-blue.svg?style=flat-square)](https://www.gnu.org/licenses/gpl-2.0.en.html)
 
 UEFI:NTFS - Boot NTFS or exFAT partitions from UEFI
