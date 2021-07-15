@@ -103,6 +103,7 @@
     <OutDir>$(SolutionDir)x64\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)$(ProjectName)\</IntDir>
     <TargetName>bootx64</TargetName>
+    <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <TargetExt>.efi</TargetExt>
@@ -111,6 +112,7 @@
     <OutDir>$(SolutionDir)ia32\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)$(ProjectName)\</IntDir>
     <TargetName>bootia32</TargetName>
+    <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <TargetExt>.efi</TargetExt>
@@ -119,6 +121,7 @@
     <OutDir>$(SolutionDir)arm\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)$(ProjectName)\</IntDir>
     <TargetName>bootarm</TargetName>
+    <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <TargetExt>.efi</TargetExt>
@@ -127,6 +130,7 @@
     <OutDir>$(SolutionDir)aa64\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)$(ProjectName)\</IntDir>
     <TargetName>bootaa64</TargetName>
+    <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <TargetExt>.efi</TargetExt>
@@ -135,6 +139,7 @@
     <OutDir>$(SolutionDir)x64\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)$(ProjectName)\</IntDir>
     <TargetName>bootx64</TargetName>
+    <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <TargetExt>.efi</TargetExt>
@@ -143,6 +148,7 @@
     <OutDir>$(SolutionDir)ia32\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)$(ProjectName)\</IntDir>
     <TargetName>bootia32</TargetName>
+    <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <TargetExt>.efi</TargetExt>
@@ -151,6 +157,7 @@
     <OutDir>$(SolutionDir)arm\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)$(ProjectName)\</IntDir>
     <TargetName>bootarm</TargetName>
+    <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <TargetExt>.efi</TargetExt>
@@ -159,6 +166,7 @@
     <OutDir>$(SolutionDir)aa64\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)$(ProjectName)\</IntDir>
     <TargetName>bootaa64</TargetName>
+    <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -189,6 +197,14 @@
       <OptimizeReferences>true</OptimizeReferences>
       <RandomizedBaseAddress />
     </Link>
+    <PreBuildEvent>
+      <Command>del version.h &gt;NUL 2&gt;&amp;1
+git describe --tags --dirty &gt; version.txt
+set /p VERSION= &lt; version.txt
+del version.txt
+echo #define VERSION_STRING L"%VERSION%"&gt; $(SolutionDir)version.h</Command>
+      <Message>Create 'version.h'</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -220,6 +236,14 @@
       <TargetMachine>MachineX86</TargetMachine>
       <RandomizedBaseAddress />
     </Link>
+    <PreBuildEvent>
+      <Command>del version.h &gt;NUL 2&gt;&amp;1
+git describe --tags --dirty &gt; version.txt
+set /p VERSION= &lt; version.txt
+del version.txt
+echo #define VERSION_STRING L"%VERSION%"&gt; $(SolutionDir)version.h</Command>
+      <Message>Create 'version.h'</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <ClCompile>
@@ -250,6 +274,14 @@
       <OptimizeReferences>true</OptimizeReferences>
       <RandomizedBaseAddress />
     </Link>
+    <PreBuildEvent>
+      <Command>del version.h &gt;NUL 2&gt;&amp;1
+git describe --tags --dirty &gt; version.txt
+set /p VERSION= &lt; version.txt
+del version.txt
+echo #define VERSION_STRING L"%VERSION%"&gt; $(SolutionDir)version.h</Command>
+      <Message>Create 'version.h'</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <ClCompile>
@@ -280,6 +312,14 @@
       <OptimizeReferences>true</OptimizeReferences>
       <RandomizedBaseAddress />
     </Link>
+    <PreBuildEvent>
+      <Command>del version.h &gt;NUL 2&gt;&amp;1
+git describe --tags --dirty &gt; version.txt
+set /p VERSION= &lt; version.txt
+del version.txt
+echo #define VERSION_STRING L"%VERSION%"&gt; $(SolutionDir)version.h</Command>
+      <Message>Create 'version.h'</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -308,6 +348,14 @@
       <OptimizeReferences>true</OptimizeReferences>
       <RandomizedBaseAddress />
     </Link>
+    <PreBuildEvent>
+      <Command>del version.h &gt;NUL 2&gt;&amp;1
+git describe --tags --dirty &gt; version.txt
+set /p VERSION= &lt; version.txt
+del version.txt
+echo #define VERSION_STRING L"%VERSION%"&gt; $(SolutionDir)version.h</Command>
+      <Message>Create 'version.h'</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -336,6 +384,14 @@
       <OptimizeReferences>true</OptimizeReferences>
       <RandomizedBaseAddress />
     </Link>
+    <PreBuildEvent>
+      <Command>del version.h &gt;NUL 2&gt;&amp;1
+git describe --tags --dirty &gt; version.txt
+set /p VERSION= &lt; version.txt
+del version.txt
+echo #define VERSION_STRING L"%VERSION%"&gt; $(SolutionDir)version.h</Command>
+      <Message>Create 'version.h'</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <ClCompile>
@@ -364,6 +420,14 @@
       <OptimizeReferences>true</OptimizeReferences>
       <RandomizedBaseAddress />
     </Link>
+    <PreBuildEvent>
+      <Command>del version.h &gt;NUL 2&gt;&amp;1
+git describe --tags --dirty &gt; version.txt
+set /p VERSION= &lt; version.txt
+del version.txt
+echo #define VERSION_STRING L"%VERSION%"&gt; $(SolutionDir)version.h</Command>
+      <Message>Create 'version.h'</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <ClCompile>
@@ -392,6 +456,14 @@
       <OptimizeReferences>true</OptimizeReferences>
       <RandomizedBaseAddress />
     </Link>
+    <PreBuildEvent>
+      <Command>del version.h &gt;NUL 2&gt;&amp;1
+git describe --tags --dirty &gt; version.txt
+set /p VERSION= &lt; version.txt
+del version.txt
+echo #define VERSION_STRING L"%VERSION%"&gt; $(SolutionDir)version.h</Command>
+      <Message>Create 'version.h'</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\boot.c" />
