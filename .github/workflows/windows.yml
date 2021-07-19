@@ -37,3 +37,11 @@ jobs:
       with:
         name: uefi-ntfs
         path: ./*.efi
+
+    - name: Create release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      env:
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      with:
+        files: ./*.efi
