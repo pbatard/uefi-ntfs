@@ -55,7 +55,7 @@ The way UEFI:NTFS works, in conjunction with Rufus, is as follows:
 ## Limitations
 
 __[Secure Boot](https://en.wikipedia.org/wiki/Unified_Extensible_Firmware_Interface#Secure_boot)
-must be disabled for UEFI:NTFS to work__.
+must currently be disabled for UEFI:NTFS to work__.
 
 Now, there are two things to be said about this:
 
@@ -71,45 +71,33 @@ Now, there are two things to be said about this:
    from [this entry](https://github.com/pbatard/rufus/wiki/FAQ#Blah_UEFI_Blah_FAT32_therefore_Rufus_should_Blah)
    of the Rufus FAQ.
 
-2. As a developer, I'd like nothing better than be able to sign UEFI:NTFS for
-   Secure Boot.
+2. We are working on producing a Secure Boot compatible version of UEFI:NTFS.
 
-   However, this is not possible because Microsoft have __arbitrarily__
-   decided that [they would not sign anything that is GPLv3](https://techcommunity.microsoft.com/t5/hardware-dev-center/updated-uefi-signing-requirements/ba-p/1062916)
-   under the [false pretence](https://www.gnu.org/licenses/gpl-faq.en.html#GiveUpKeys)
-   that it would force them to relinquish their private signing keys, when it
-   is clear that the current implementation of Secure Boot (that allows users
-   to disable Secure Boot altogether, or set their own keys, or use Microsoft
-   services to sign their work for Secure Boot) is more than enough to meet
-   any of the GPLv3 requirements.
+   However, due to Microsoft having arbitrarily decided that
+   [they would not sign anything that is GPLv3](https://techcommunity.microsoft.com/t5/hardware-dev-center/updated-uefi-signing-requirements/ba-p/1062916)
+   we are unable to use our existing [EfiFs](https://github.com/pbatard/efifs)
+   GPLv3 NTFS driver to do that, as it is derived from GRUB which is GPLv3.
+   So we've had to invest months of development time to produce a new
+   [GPLv2 NTFS driver](https://github.com/pbatard/ntfs-3g), in order to meet
+   Microsoft's arbitrary rules for Secure Boot signing.
 
-   So, this "no GPLv3" provision from Microsoft's Secure Boot signing terms
-   can only be qualified as __hyperbolic nonsense__ since all the GPLv3
-   mandates is that your system cannot lock users out from running their own
-   code if they  choose so, which, as long as you follow the UEFI guidelines,
-   Secure Boot should never do.
+   Also, because we are an independent Open Source developer, and not a large
+   corporation, we do have to jump through a lot of additional (and expensive)
+   hoops in order to gain access to the Secure Boot signing process.
 
-   What this means is that, unfortunately, UEFI:NTFS cannot be submitted to
-   Microsoft for Secure Boot signing, as, even as the core bootloader source
-   is GPLv2 (which can be signed), the underlying NTFS driver, which needs to
-   be loaded by the GPLv2 bootloader (and therefore would need to be Secure
-   Boot signed) is itself GPLv3, as it was derived from the GRUB 2.0 project.
-   This, in turn, means that it will not be signed by Microsoft, which means
-   that you have no choice but to have Secure Boot disabled for UEFI:NTFS to
-   run.
-
-   Still, if you are unhappy about this situation, I would strongly encourage
-   you to contact Microsoft to complain about what can only be seen as clear
-   abuse of power and ask them to clarify why they are still putting forward
-   the easily disprovable argument that the terms of the GPLv3 would somehow
-   force them to relinquish their private keys (which is the official reason
-   they have been giving as justification for refusing to sign GPLv3 works).
+   The end result of this is that the process of making UEFI:NTFS compatible
+   with Secure Boot is likely to take time and that, since Microsoft is the
+   sole judge, jury, and executioner of the signing process, even as we can
+   demonstrate that our binaries are safe on account of being
+   produced from public source in a 100% transparent manner, we can not even
+   guarantee that UEFI:NTFS will be accepted for Secure Boot signing...
 
 ## Prerequisites
 
 * [Visual Studio 2019](https://www.visualstudio.com/vs/community/) or
   [MinGW](http://www.mingw.org/)/[MinGW64](http://mingw-w64.sourceforge.net/)
-  (preferably installed using [msys2](https://sourceforge.net/projects/msys2/)) or gcc
+  (preferably installed using [msys2](https://sourceforge.net/projects/msys2/))
+  or gcc
 * [QEMU](http://www.qemu.org) __v2.7 or later__
   (NB: You can find QEMU Windows binaries [here](https://qemu.weilnetz.de/w64/))
 * git
