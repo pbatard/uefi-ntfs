@@ -1,13 +1,17 @@
 name: Windows (MSVC with gnu-efi) build
 
-on: push
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
 
 env:
   SOLUTION_FILE_PATH: ./uefi-ntfs.sln
   BUILD_CONFIGURATION: Release
 
 jobs:
-  build:
+  VS2019-Build:
     runs-on: windows-latest
 
     strategy:
@@ -26,8 +30,8 @@ jobs:
 
     - name: Build UEFI bootloader
       run: |
-        msbuild ${{env.SOLUTION_FILE_PATH}} /m /p:Configuration=${{env.BUILD_CONFIGURATION}},Platform=${{matrix.TARGET_PLATFORM}}
-        copy ${{matrix.TARGET_PLATFORM}}\${{env.BUILD_CONFIGURATION}}\*.efi .
+        msbuild ${{ env.SOLUTION_FILE_PATH }} /m /p:Configuration=${{ env.BUILD_CONFIGURATION }},Platform=${{ matrix.TARGET_PLATFORM }}
+        copy ${{ matrix.TARGET_PLATFORM }}\${{ env.BUILD_CONFIGURATION }}\*.efi .
 
     - name: Display SHA-256
       run: Get-FileHash *.efi
@@ -42,6 +46,6 @@ jobs:
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
       env:
-        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         files: ./*.efi

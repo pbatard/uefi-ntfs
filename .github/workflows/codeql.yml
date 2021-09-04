@@ -1,0 +1,40 @@
+name: CodeQL
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+env:
+  SOLUTION_FILE_PATH: ./uefi-ntfs.sln
+  BUILD_CONFIGURATION: Debug
+  TARGET_PLATFORM: x64
+
+jobs:
+  CodeQL-Build:
+    runs-on: windows-latest
+
+    permissions:
+      security-events: write
+
+    steps:
+    - name: Check out repository and submodules
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        submodules: recursive
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v1
+      with:
+        languages: cpp
+
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v1
+
+    - name: Build UEFI bootloader
+      run: msbuild ${{ env.SOLUTION_FILE_PATH }} /m /p:Configuration=${{ env.BUILD_CONFIGURATION }},Platform=${{ env.TARGET_PLATFORM }}
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v1

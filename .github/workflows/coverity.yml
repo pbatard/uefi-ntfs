@@ -1,13 +1,17 @@
 name: Coverity (MSVC with gnu-efi) build
 
-on: push
+on:
+  push:
+    branches: [master]
 
 env:
   SOLUTION_FILE_PATH: ./uefi-ntfs.sln
+  BUILD_CONFIGURATION: Debug
+  TARGET_PLATFORM: x64
   EMAIL: pete@akeo.ie
 
 jobs:
-  build:
+  Coverity-Build:
     runs-on: windows-latest
 
     steps:
@@ -19,20 +23,20 @@ jobs:
 
     - name: Download Coverity
       run: |
-        curl -d "token=${{secrets.COVERITY_SCAN_TOKEN}}&project=pbatard%2Fuefi-ntfs" -L https://scan.coverity.com/download/cxx/win64 -o cov-analysis-win64.zip
+        curl -d "token=${{ secrets.COVERITY_SCAN_TOKEN }}&project=pbatard%2Fuefi-ntfs" -L https://scan.coverity.com/download/cxx/win64 -o cov-analysis-win64.zip
         7z x cov-analysis-win64.zip
         del cov-analysis-win64.zip
         move cov-analysis-win64* cov-analysis-win64
 
     - name: Add Coverity to PATH
       shell: bash
-      run: echo "${{github.workspace}}/cov-analysis-win64/bin" >> $GITHUB_PATH
+      run: echo "${{ github.workspace }}/cov-analysis-win64/bin" >> $GITHUB_PATH
 
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v1
 
     - name: Build with Coverity
-      run: cov-build.exe --dir cov-int msbuild ${{env.SOLUTION_FILE_PATH}} /m /p:Configuration=Release,Platform=x64
+      run: cov-build.exe --dir cov-int msbuild ${{ env.SOLUTION_FILE_PATH }} /m /p:Configuration=${{ env.BUILD_CONFIGURATION }},Platform=${{ env.TARGET_PLATFORM }}
 
     - name: Upload Coverity build for analysis
       run: |
