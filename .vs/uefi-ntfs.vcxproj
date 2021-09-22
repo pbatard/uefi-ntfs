@@ -471,6 +471,9 @@ echo #define VERSION_STRING L"%VERSION%"&gt; $(SolutionDir)version.h</Command>
   <ItemGroup>
     <None Include="..\debug.vbs" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\boot.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
