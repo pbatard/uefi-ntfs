@@ -14,6 +14,8 @@ QEMU_OPTS  = "-nodefaults -vga std -serial vc"
 NO_CACHE   = False
 ' Change the following to "exfat" if you want to test exFAT instead of NTFS
 FS         = "ntfs"
+' Version of EfiFs to use
+EFIFS_VER  = "v1.8"
 
 ' You shouldn't have to mofify anything below this
 CONF       = WScript.Arguments(0)
@@ -55,29 +57,36 @@ VHD_ZIP    = FS & ".zip"
 VHD_IMG    = FS & ".vhd"
 VHD_URL    = "https://efi.akeo.ie/test/" & VHD_ZIP
 DRV        = FS & "_" & UEFI_EXT & ".efi"
-DRV_URL    = "https://efi.akeo.ie/downloads/efifs-latest/" & UEFI_EXT & "/" & DRV
+DRV_URL    = "https://github.com/pbatard/efifs/releases/download/" & EFIFS_VER & "/" & DRV
 
 ' Globals
 Set fso = CreateObject("Scripting.FileSystemObject")
 Set shell = CreateObject("WScript.Shell")
 
-' Download a file from FTP
-Sub DownloadFtp(Server, Path)
-  Set file = fso.CreateTextFile("ftp.txt", True)
-  Call file.Write("open " & Server & vbCrLf &_
-    "anonymous" & vbCrLf & "user" & vbCrLf & "bin" & vbCrLf &_
-    "get " & Path & vbCrLf & "bye" & vbCrLf)
-  Call file.Close()
-  Call shell.Run("%comspec% /c ftp -s:ftp.txt > NUL", 0, True)
-  Call fso.DeleteFile("ftp.txt")
-End Sub
+' Follow through an HTTP redirect and return the target URL
+Function GetRedirect(Url)
+  Const WHR_EnableRedirects = 6
+  Set oHttp = CreateObject("WinHttp.WinHttpRequest.5.1")
+  oHttp.Option(WHR_EnableRedirects) = False
+  oHttp.Open "HEAD", Url, False
+  oHttp.Send
+  If Err.Number = 0 Then
+    If oHttp.Status = 200 Then
+      GetRedirect = Url
+    ElseIf oHttp.Status = 301 Or oHttp.Status = 302 Or oHttp.Status = 303 Then
+      GetRedirect = oHttp.getResponseHeader("Location")
+    End If
+  Else
+    GetRedirect = "Error " & Err.Number & ": " & Err.Source & " " & Err.Description
+  End If
+End Function
 
 ' Download a file from HTTP
 Sub DownloadHttp(Url, File)
   Const BINARY = 1
   Const OVERWRITE = 2
-  Set xHttp = createobject("Microsoft.XMLHTTP")
-  Set bStrm = createobject("Adodb.Stream")
+  Set xHttp = CreateObject("Microsoft.XMLHTTP")
+  Set bStrm = CreateObject("Adodb.Stream")
   Call xHttp.Open("GET", Url, False)
   If NO_CACHE = True Then
     Call xHttp.SetRequestHeader("If-None-Match", "some-random-string")
@@ -113,7 +122,6 @@ Sub Unzip(Archive, File)
     End If
   Next
 End Sub
-
 
 ' Check that QEMU is available
 If Not fso.FileExists(QEMU_PATH & QEMU_EXE) Then
@@ -156,6 +164,7 @@ End If
 
 ' Fetch the NTFS EFI driver
 If Not fso.FileExists(DRV) Then
+  DRV_URL = GetRedirect(DRV_URL)
   Call DownloadHttp(DRV_URL, DRV)
 End If
 If Not fso.FileExists(DRV) Then
