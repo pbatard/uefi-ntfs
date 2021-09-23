@@ -1,0 +1,86 @@
+name: Linux (gcc with EDK2) build
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+env:
+  BUILD_TYPE: RELEASE
+  GCC5_ARM_PREFIX: arm-linux-gnueabi-
+  GCC5_AARCH64_PREFIX: aarch64-linux-gnu-
+  GCC5_RISCV64_PREFIX: riscv64-linux-gnu-
+
+jobs:
+  Linux-EDK2-Build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        include:
+        - TARGET_TYPE: x64
+          TARGET_ARCH: X64
+          TARGET_PKGS: python3-distutils nasm uuid-dev
+        - TARGET_TYPE: ia32
+          TARGET_ARCH: IA32
+          TARGET_PKGS: gcc-multilib python3-distutils nasm uuid-dev
+        - TARGET_TYPE: aa64
+          TARGET_ARCH: AARCH64
+          TARGET_PKGS: gcc-aarch64-linux-gnu python3-distutils uuid-dev
+        - TARGET_TYPE: arm
+          TARGET_ARCH: ARM
+          TARGET_PKGS: gcc-arm-linux-gnueabi python3-distutils uuid-dev
+        - TARGET_TYPE: riscv64
+          TARGET_ARCH: RISCV64
+          TARGET_PKGS: gcc-riscv64-linux-gnu python3-distutils uuid-dev
+
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Set version
+      id: set_version
+      run: echo "::set-output name=version::$(git describe --tags --dirty)"
+
+    - name: Create version.h file
+      run: echo '#define VERSION_STRING L"${{steps.set_version.outputs.version}}"' > version.h
+
+    - name: Set up Linux environment
+      run: sudo apt install -y ${{matrix.TARGET_PKGS}}
+
+    - name: Fix missing Risc-V header
+      if: matrix.TARGET_TYPE == 'riscv64'
+      run: sudo ln -s /usr/riscv64-linux-gnu/include/gnu/stubs-lp64d.h /usr/riscv64-linux-gnu/include/gnu/stubs-lp64.h
+
+    - name: Set up EDK2
+      run: |
+        git clone --recursive https://github.com/tianocore/edk2.git
+        make -C edk2/BaseTools
+
+    - name: Build UEFI bootloader
+      run: |
+        export WORKSPACE=$PWD
+        export PACKAGES_PATH=$WORKSPACE:$WORKSPACE/edk2
+        source edk2/edksetup.sh
+        build -a ${{matrix.TARGET_ARCH}} -b ${BUILD_TYPE} -t GCC5 -p uefi-ntfs.dsc
+        mv $WORKSPACE/Build/${BUILD_TYPE}_GCC5/${{matrix.TARGET_ARCH}}/uefi-ntfs.efi $WORKSPACE/boot${{matrix.TARGET_TYPE}}.efi
+
+    - name: Display SHA-256
+      run: sha256sum *.efi
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: uefi-ntfs
+        path: ./*.efi
+
+    - name: Create release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      env:
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      with:
+        files: ./*.efi
