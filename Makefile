@@ -100,6 +100,7 @@ CFLAGS         += -DCONFIG_$(GNUEFI_ARCH) -D__MAKEWITH_GNUEFI -DGNU_EFI_USE_MS_A
 LDFLAGS        += -L$(GNUEFI_DIR)/$(GNUEFI_ARCH)/lib -e $(EP_PREFIX)efi_main
 LDFLAGS        += -s -Wl,-Bsymbolic -nostdlib -shared
 LIBS            = -lefi $(CRT0_LIBS)
+OBJS            = boot.o path.o
 
 ifeq (, $(shell which $(CC)))
   $(error The selected compiler ($(CC)) was not found)
@@ -126,18 +127,22 @@ all: $(GNUEFI_DIR)/$(GNUEFI_ARCH)/lib/libefi.a boot.efi
 $(GNUEFI_DIR)/$(GNUEFI_ARCH)/lib/libefi.a:
 	$(MAKE) -C$(GNUEFI_DIR) CROSS_COMPILE=$(CROSS_COMPILE) ARCH=$(GNUEFI_ARCH) $(GNUEFI_LIBS)
 
-%.efi: %.o
+version.h:
+	@echo  [GEN] $(notdir $@)
+	@echo  '#define VERSION_STRING L"$(shell git describe --tags --dirty)"' > version.h
+
+%.efi: $(OBJS)
 	@echo  [LD]  $(notdir $@)
 ifeq ($(CRT0_LIBS),)
-	@$(CC) $(LDFLAGS) $< -o $@ $(LIBS)
+	@$(CC) $(LDFLAGS) $(OBJS) -o $@ $(LIBS)
 else
-	@$(CC) $(LDFLAGS) $< -o $*.elf $(LIBS)
+	@$(CC) $(LDFLAGS) $(OBJS) -o $*.elf $(LIBS)
 	@$(OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel* \
 	            -j .rela* -j .reloc -j .eh_frame -O binary $*.elf $@
 	@rm -f $*.elf
 endif
 
-%.o: %.c
+%.o: %.c version.h
 	@echo  [CC]  $(notdir $@)
 	@$(CC) $(CFLAGS) -ffreestanding -c $<
 
@@ -170,7 +175,7 @@ OVMF_$(OVMF_ARCH).fd:
 	rm $(OVMF_ZIP)
 
 clean:
-	rm -f boot.efi *.o
+	rm -f version.h boot.efi *.o
 	rm -rf image
 
 superclean: clean

@@ -38,26 +38,6 @@
 /* FreePool() replacement, that NULLs the freed pointer. */
 #define SafeFree(p)          do { FreePool(p); p = NULL;} while(0)
 
-/* Strings that can be used to identify the plaform */
-#if defined(_M_X64) || defined(__x86_64__)
-  static CHAR16* Arch = L"x64";
-  static CHAR16* ArchName = L"64-bit x86";
-#elif defined(_M_IX86) || defined(__i386__)
-  static CHAR16* Arch = L"ia32";
-  static CHAR16* ArchName = L"32-bit x86";
-#elif defined (_M_ARM64) || defined(__aarch64__)
-  static CHAR16* Arch = L"aa64";
-  static CHAR16* ArchName = L"64-bit ARM";
-#elif defined (_M_ARM) || defined(__arm__)
-  static CHAR16* Arch = L"arm";
-  static CHAR16* ArchName = L"32-bit ARM";
-#elif defined(_M_RISCV64) || (defined (__riscv) && (__riscv_xlen == 64))
-  static CHAR16* Arch = L"riscv64";
-  static CHAR16* ArchName = L"64-bit RISC-V";
-#else
-#  error Unsupported architecture
-#endif
-
 /*
  * Convenience macros to print informational, warning or error messages.
  * NB: In addition to the standard %-based flags, Print() supports the following:
@@ -71,3 +51,28 @@
 #define PrintInfo(fmt, ...)     Print(L"[INFO] " fmt L"\n", ##__VA_ARGS__)
 #define PrintWarning(fmt, ...)  Print(L"%E[WARN] " fmt L"%N\n", ##__VA_ARGS__)
 #define PrintError(fmt, ...)    Print(L"%E[FAIL] " fmt L": [%d] %r%N\n", ##__VA_ARGS__, (Status&0x7FFFFFFF), Status)
+
+/*
+ * Some UEFI firmwares have a *BROKEN* Unicode collation implementation
+ * so we must provide our own version of StriCmp for ASCII comparison...
+ */
+static __inline CHAR16 _tolower(CONST CHAR16 c)
+{
+	if (('A' <= c) && (c <= 'Z'))
+		return 'a' + (c - 'A');
+	return c;
+}
+
+static __inline INTN _StriCmp(CONST CHAR16 * s1, CONST CHAR16 * s2)
+{
+	while ((*s1 != L'\0') && (_tolower(*s1) == _tolower(*s2)))
+		s1++, s2++;
+	return (INTN)(*s1 - *s2);
+}
+
+/*
+ * Path function prototypes
+ */
+EFI_DEVICE_PATH* GetParentDevice(CONST EFI_DEVICE_PATH* DevicePath);
+INTN CompareDevicePaths(CONST EFI_DEVICE_PATH* dp1, CONST EFI_DEVICE_PATH* dp2);
+EFI_STATUS SetPathCase(CONST EFI_FILE_HANDLE Root, CHAR16* Path);

@@ -467,6 +467,7 @@ echo #define VERSION_STRING L"%VERSION%"&gt; $(SolutionDir)version.h</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\boot.c" />
+    <ClCompile Include="..\path.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\debug.vbs" />
