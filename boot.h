@@ -21,8 +21,16 @@
 #include <efistdarg.h>
 #include <libsmbios.h>
 
+/* Maximum size to be used for paths */
+#ifndef PATH_MAX
+#define PATH_MAX            512
+#endif
+
 /* Maximum size for the File Info structure we query */
-#define FILE_INFO_SIZE      (512 * sizeof(CHAR16))
+#define FILE_INFO_SIZE      (PATH_MAX * sizeof(CHAR16))
+
+/* For safety, we set a maximum size that strings shall not outgrow */
+#define STRING_MAX          (PATH_MAX + 2)
 
 /* Number of times we retry opening a volume */
 #define NUM_RETRIES         1
@@ -52,6 +60,23 @@
 #define PrintWarning(fmt, ...)  Print(L"%E[WARN] " fmt L"%N\n", ##__VA_ARGS__)
 #define PrintError(fmt, ...)    Print(L"%E[FAIL] " fmt L": [%d] %r%N\n", ##__VA_ARGS__, (Status&0x7FFFFFFF), Status)
 
+/* Convenience assertion macro */
+#define P_ASSERT(f, l, a)   if(!(a)) do { Print(L"*** ASSERT FAILED: %a(%d): %a ***\n", f, l, #a); while(1); } while(0)
+
+/*
+ * Secure string length, that asserts if the string is NULL or if
+ * the length is larger than a predetermined value (STRING_MAX)
+ */
+static __inline UINTN _SafeStrLen(CONST CHAR16* String, CONST CHAR8* File, CONST UINTN Line) {
+	UINTN Len = 0;
+	P_ASSERT(File, Line, String != NULL);
+	Len = StrLen(String);
+	P_ASSERT(File, Line, Len < STRING_MAX);
+	return Len;
+}
+
+#define SafeStrLen(s) _SafeStrLen(s, __FILE__, __LINE__)
+
 /*
  * Some UEFI firmwares have a *BROKEN* Unicode collation implementation
  * so we must provide our own version of StriCmp for ASCII comparison...
@@ -63,12 +88,41 @@ static __inline CHAR16 _tolower(CONST CHAR16 c)
 	return c;
 }
 
-static __inline INTN _StriCmp(CONST CHAR16 * s1, CONST CHAR16 * s2)
+static __inline INTN _StriCmp(CONST CHAR16* s1, CONST CHAR16* s2)
 {
+	/* NB: SafeStrLen() will already have asserted if these condition are met */
+	if ((SafeStrLen(s1) >= STRING_MAX) || (SafeStrLen(s2) >= STRING_MAX))
+		return -1;
 	while ((*s1 != L'\0') && (_tolower(*s1) == _tolower(*s2)))
 		s1++, s2++;
 	return (INTN)(*s1 - *s2);
 }
+
+/*
+ * Secure string copy, that either uses the already secure version from
+ * EDK2, or duplicates it for gnu-efi and asserts on any error.
+ */
+static __inline VOID _SafeStrCpy(CHAR16* Destination, UINTN DestMax,
+	CONST CHAR16* Source, CONST CHAR8* File, CONST UINTN Line) {
+#ifdef _GNU_EFI
+	P_ASSERT(File, Line, Destination != NULL);
+	P_ASSERT(File, Line, Source != NULL);
+	P_ASSERT(File, Line, DestMax != 0);
+	/*
+	 * EDK2 would use RSIZE_MAX, but we use the smaller PATH_MAX for
+	 * gnu-efi as it can help detect path overflows while debugging.
+	 */
+	P_ASSERT(File, Line, DestMax <= PATH_MAX);
+	P_ASSERT(File, Line, DestMax > StrLen(Source));
+	while (*Source != 0)
+		*(Destination++) = *(Source++);
+	*Destination = 0;
+#else
+	P_ASSERT(File, Line, StrCpyS(Destination, DestMax, Source) == 0);
+#endif
+}
+
+#define SafeStrCpy(d, l, s) _SafeStrCpy(d, l, s, __FILE__, __LINE__)
 
 /*
  * Path function prototypes
@@ -76,3 +130,4 @@ static __inline INTN _StriCmp(CONST CHAR16 * s1, CONST CHAR16 * s2)
 EFI_DEVICE_PATH* GetParentDevice(CONST EFI_DEVICE_PATH* DevicePath);
 INTN CompareDevicePaths(CONST EFI_DEVICE_PATH* dp1, CONST EFI_DEVICE_PATH* dp2);
 EFI_STATUS SetPathCase(CONST EFI_FILE_HANDLE Root, CHAR16* Path);
+CHAR16* DevicePathToString(CONST EFI_DEVICE_PATH* DevicePath);

@@ -72,25 +72,25 @@ INTN CompareDevicePaths(CONST EFI_DEVICE_PATH *dp1, CONST EFI_DEVICE_PATH *dp2)
 	while (1) {
 		UINT8 type1, type2;
 		UINT8 subtype1, subtype2;
-		UINT16 len1, len2;
+		UINTN len1, len2;
 		INTN ret;
 
 		type1 = DevicePathType(dp1);
 		type2 = DevicePathType(dp2);
 
 		if (type1 != type2)
-			return (int) type2 - (int) type1;
+			return (INTN) type2 - (INTN) type1;
 
 		subtype1 = DevicePathSubType(dp1);
 		subtype2 = DevicePathSubType(dp2);
 
 		if (subtype1 != subtype2)
-			return (int) subtype1 - (int) subtype2;
+			return (INTN) subtype1 - (INTN) subtype2;
 
 		len1 = DevicePathNodeLength(dp1);
 		len2 = DevicePathNodeLength(dp2);
 		if (len1 != len2)
-			return (int) len1 - (int) len2;
+			return (INTN) len1 - (INTN) len2;
 
 		ret = CompareMem(dp1, dp2, len1);
 		if (ret != 0)
@@ -109,6 +109,7 @@ INTN CompareDevicePaths(CONST EFI_DEVICE_PATH *dp1, CONST EFI_DEVICE_PATH *dp2)
 /* Fix the case of a path by looking it up on the file system */
 EFI_STATUS SetPathCase(CONST EFI_FILE_HANDLE Root, CHAR16* Path)
 {
+	CONST UINTN FileInfoSize = sizeof(EFI_FILE_INFO) + PATH_MAX * sizeof(CHAR16);
 	EFI_FILE_HANDLE FileHandle = NULL;
 	EFI_FILE_INFO* FileInfo;
 	UINTN i, Len;
@@ -118,13 +119,16 @@ EFI_STATUS SetPathCase(CONST EFI_FILE_HANDLE Root, CHAR16* Path)
 	if ((Root == NULL) || (Path == NULL) || (Path[0] != L'\\'))
 		return EFI_INVALID_PARAMETER;
 
-	FileInfo = (EFI_FILE_INFO*)AllocatePool(FILE_INFO_SIZE);
+	FileInfo = (EFI_FILE_INFO*)AllocatePool(FileInfoSize);
 	if (FileInfo == NULL)
 		return EFI_OUT_OF_RESOURCES;
 
-	Len = StrLen(Path);
+	Len = SafeStrLen(Path);
+	/* The checks above ensure that Len is always >= 1, but just in case... */
+	P_ASSERT(__FILE__, __LINE__, Len >= 1);
+
 	// Find the last backslash in the path
-	for (i = Len-1; (i != 0) && (Path[i] != L'\\'); i--);
+	for (i = Len - 1; (i != 0) && (Path[i] != L'\\'); i--);
 
 	if (i != 0) {
 		Path[i] = 0;
@@ -134,18 +138,18 @@ EFI_STATUS SetPathCase(CONST EFI_FILE_HANDLE Root, CHAR16* Path)
 			goto out;
 	}
 
-	Status = Root->Open(Root, &FileHandle, (i==0)?L"\\":Path, EFI_FILE_MODE_READ, 0);
+	Status = Root->Open(Root, &FileHandle, (i == 0) ? L"\\" : Path, EFI_FILE_MODE_READ, 0);
 	if (EFI_ERROR(Status))
 		goto out;
 
 	do {
-		Size = FILE_INFO_SIZE;
+		Size = FileInfoSize;
 		ZeroMem(FileInfo, Size);
 		Status = FileHandle->Read(FileHandle, &Size, (VOID*)FileInfo);
 		if (EFI_ERROR(Status))
 			goto out;
-		if (_StriCmp(&Path[i+1], FileInfo->FileName) == 0) {
-			StrCpy(&Path[i+1], FileInfo->FileName);
+		if (_StriCmp(&Path[i + 1], FileInfo->FileName) == 0) {
+			SafeStrCpy(&Path[i + 1], PATH_MAX, FileInfo->FileName);
 			Status = EFI_SUCCESS;
 			goto out;
 		}
@@ -158,4 +162,62 @@ out:
 		FileHandle->Close(FileHandle);
 	FreePool((VOID*)FileInfo);
 	return Status;
+}
+
+/*
+ * Poor man's Device Path to string conversion, where we
+ * simply convert the path buffer to hexascii.
+ * This is needed to support old Dell UEFI platforms, that
+ * don't have the Device Path to Text protocol...
+ */
+CHAR16* DevicePathToHex(CONST EFI_DEVICE_PATH* DevicePath)
+{
+	UINTN Len = 0, i;
+	CHAR16* DevicePathString = NULL;
+	UINT8* dp = (UINT8*)DevicePath;
+
+	if (DevicePath == NULL)
+		return NULL;
+
+	while (!IsDevicePathEnd(DevicePath)) {
+		UINTN NodeLen = DevicePathNodeLength(DevicePath);
+		/* Device Paths are provided by UEFI and are sanitized. */
+		/* coverity[var_assign_var] */
+		Len += NodeLen;
+		DevicePath = (EFI_DEVICE_PATH*)((UINT8*)DevicePath + NodeLen);
+	}
+
+	DevicePathString = AllocatePool((2 * Len + 1) * sizeof(CHAR16));
+	for (i = 0; i < Len; i++) {
+		DevicePathString[2 * i] = ((dp[i] >> 4) < 10) ?
+			((dp[i] >> 4) + '0') : ((dp[i] >> 4) - 0xa + 'A');
+		DevicePathString[2 * i + 1] = ((dp[i] & 15) < 10) ?
+			((dp[i] & 15) + '0') : ((dp[i] & 15) - 0xa + 'A');
+	}
+	DevicePathString[2 * Len] = 0;
+
+	return DevicePathString;
+}
+
+/*
+ * Convert a Device Path to a string.
+ * The returned value Must be freed with FreePool().
+ */
+CHAR16* DevicePathToString(CONST EFI_DEVICE_PATH* DevicePath)
+{
+	CHAR16* DevicePathString = NULL;
+	EFI_STATUS Status;
+	EFI_DEVICE_PATH_TO_TEXT_PROTOCOL* DevicePathToText;
+
+	/* On most platforms, the DevicePathToText protocol should be available */
+	Status = gBS->LocateProtocol(&gEfiDevicePathToTextProtocolGuid, NULL, (VOID**)&DevicePathToText);
+	if (Status == EFI_SUCCESS)
+		DevicePathString = DevicePathToText->ConvertDevicePathToText(DevicePath, FALSE, FALSE);
+	else
+#if defined(_GNU_EFI)
+		DevicePathString = DevicePathToStr((EFI_DEVICE_PATH*)DevicePath);
+#else
+		DevicePathString = DevicePathToHex(DevicePath);
+#endif
+	return DevicePathString;
 }

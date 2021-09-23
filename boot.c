@@ -116,7 +116,7 @@ static VOID DisconnectBlockingDrivers(VOID) {
 		if (Status == EFI_SUCCESS)
 			continue;
 
-		DevicePathString = DevicePathToStr(DevicePathFromHandle(Handles[Index]));
+		DevicePathString = DevicePathToString(DevicePathFromHandle(Handles[Index]));
 
 		// If no SimpleFileSystem on this handle but DiskIo is opened BY_DRIVER
 		// then disconnect this connection
