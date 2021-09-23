@@ -56,13 +56,13 @@ static CHAR16* GetDriverName(CONST EFI_HANDLE DriverHandle)
 	EFI_COMPONENT_NAME2_PROTOCOL *ComponentName2;
 
 	// Try EFI_COMPONENT_NAME2 protocol first
-	if ( (gBS->OpenProtocol(DriverHandle, &ComponentName2Protocol, (VOID**)&ComponentName2,
+	if ( (gBS->OpenProtocol(DriverHandle, &gEfiComponentName2ProtocolGuid, (VOID**)&ComponentName2,
 			MainImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL) == EFI_SUCCESS) &&
 		 (ComponentName2->GetDriverName(ComponentName2, (CHAR8*)"", &DriverName) == EFI_SUCCESS) )
 		return DriverName;
 
 	// Fallback to EFI_COMPONENT_NAME if that didn't work
-	if ( (gBS->OpenProtocol(DriverHandle, &ComponentNameProtocol, (VOID**)&ComponentName,
+	if ( (gBS->OpenProtocol(DriverHandle, &gEfiComponentNameProtocolGuid, (VOID**)&ComponentName,
 			MainImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL) == EFI_SUCCESS) &&
 		 (ComponentName->GetDriverName(ComponentName, (CHAR8*)"", &DriverName) == EFI_SUCCESS) )
 		return DriverName;
@@ -145,6 +145,8 @@ static VOID DisconnectBlockingDrivers(VOID) {
 	FreePool(Handles);
 }
 
+#if defined(_GNU_EFI)
+
 /*
  * Query SMBIOS to display some info about the system hardware and UEFI firmware.
  * Also display the current Secure Boot status.
@@ -209,11 +211,13 @@ static EFI_STATUS PrintSystemInfo(VOID)
 	return EFI_SUCCESS;
 }
 
+#endif /* _GNUEFI */
+
 /*
  * Application entry-point
  * NB: This must be set to 'efi_main' for gnu-efi crt0 compatibility
  */
-EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
+EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 {
 	CONST CHAR16* FsName[] = { L"NTFS", L"exFAT" };
 	CONST CHAR16* DriverName[] = { L"ntfs", L"exfat" };
@@ -224,13 +228,13 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	EFI_DEVICE_PATH *BootPartitionPath = NULL;
 	EFI_HANDLE *Handles = NULL, DriverHandle, DriverHandleList[2];
 	EFI_SIMPLE_FILE_SYSTEM_PROTOCOL* Volume;
-	EFI_FILE_SYSTEM_VOLUME_LABEL_INFO* VolumeInfo;
+	EFI_FILE_SYSTEM_VOLUME_LABEL* VolumeInfo;
 	EFI_FILE_HANDLE Root;
 	EFI_BLOCK_IO_PROTOCOL *BlockIo;
 	CHAR8* Buffer, FsMagic[2][8] = { 
 		{ 'N', 'T', 'F', 'S', ' ', ' ', ' ', ' '} ,
 		{ 'E', 'X', 'F', 'A', 'T', ' ', ' ', ' '} };
-	UINTN Index, FsType = 0, Try, Event, HandleCount = 0;
+	UINTN Index, FsType = 0, Try, Event, HandleCount = 0, Size;
 	BOOLEAN SameDevice;
 
 #if defined(_GNU_EFI)
@@ -242,7 +246,9 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	SystemTable->ConOut->ClearScreen(SystemTable->ConOut);
 
 	Print(L"\n%H*** UEFI:NTFS %s (%s) ***%N\n\n", VERSION_STRING, Arch);
+#if defined(_GNU_EFI)
 	PrintSystemInfo();
+#endif
 
 	Status = gBS->OpenProtocol(MainImageHandle, &gEfiLoadedImageProtocolGuid,
 		(VOID**)&LoadedImage, MainImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
@@ -327,7 +333,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		PrintInfo(L"Starting %s partition service:", FsName[FsType]);
 
 		// Use 'rufus' in the driver path, so that we don't accidentally latch onto a user driver
-		SPrint(DriverPath, ARRAY_SIZE(DriverPath), L"\\efi\\rufus\\%s_%s.efi", DriverName[FsType], Arch);
+		UnicodeSPrint(DriverPath, ARRAY_SIZE(DriverPath), L"\\efi\\rufus\\%s_%s.efi", DriverName[FsType], Arch);
 		DevicePath = FileDevicePath(LoadedImage->DeviceHandle, DriverPath);
 		if (DevicePath == NULL) {
 			Status = EFI_DEVICE_ERROR;
@@ -388,7 +394,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 
 	// Our target file system is case sensitive, so we need to figure out the
 	// case sensitive version of the following
-	SPrint(LoaderPath, ARRAY_SIZE(LoaderPath), L"\\efi\\boot\\boot%s.efi", Arch);
+	UnicodeSPrint(LoaderPath, ARRAY_SIZE(LoaderPath), L"\\efi\\boot\\boot%s.efi", Arch);
 
 	PrintInfo(L"Opening target %s partition:", FsName[FsType]);
 	// Open the the volume, with retry, as we may need to wait before poking
@@ -412,10 +418,16 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		PrintError(L"  Could not open Root directory");
 		goto out;
 	}
+
 	// Get the volume label while we're at it
-	VolumeInfo = LibFileSystemVolumeLabelInfo(Root);
-	if ((VolumeInfo != NULL) && (VolumeInfo->VolumeLabel[0] != 0))
-		PrintInfo(L"  Volume label is '%s'", VolumeInfo->VolumeLabel);
+	Size = FILE_INFO_SIZE;
+	VolumeInfo = (EFI_FILE_SYSTEM_VOLUME_LABEL*)AllocateZeroPool(Size);
+	if (VolumeInfo != NULL) {
+		Status = Root->GetInfo(Root, &gEfiFileSystemVolumeLabelInfoIdGuid, &Size, VolumeInfo);
+		if ((Status == EFI_SUCCESS) && (VolumeInfo->VolumeLabel[0] != 0))
+			PrintInfo(L"  Volume label is '%s'", VolumeInfo->VolumeLabel);
+		FreePool(VolumeInfo);
+	}
 
 	PrintInfo(L"This system uses %s UEFI => searching for %s EFI bootloader", ArchName, Arch);
 	// This next call corrects the casing to the required one

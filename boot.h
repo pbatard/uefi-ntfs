@@ -16,10 +16,44 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifdef __MAKEWITH_GNUEFI
+
 #include <efi.h>
 #include <efilib.h>
 #include <efistdarg.h>
 #include <libsmbios.h>
+
+#else /* EDK2 */
+
+#include <Base.h>
+#include <Uefi.h>
+
+#include <Library/BaseLib.h>
+#include <Library/BaseMemoryLib.h>
+#include <Library/DevicePathLib.h>
+#include <Library/MemoryAllocationLib.h>
+#include <Library/PrintLib.h>
+#include <Library/UefiApplicationEntryPoint.h>
+#include <Library/UefiBootServicesTableLib.h>
+#include <Library/UefiDriverEntryPoint.h>
+#include <Library/UefiLib.h>
+#include <Library/UefiRuntimeServicesTableLib.h>
+
+#include <Protocol/BlockIo.h>
+#include <Protocol/BlockIo2.h>
+#include <Protocol/ComponentName.h>
+#include <Protocol/ComponentName2.h>
+#include <Protocol/DevicePathFromText.h>
+#include <Protocol/DevicePathToText.h>
+#include <Protocol/DiskIo.h>
+#include <Protocol/DiskIo2.h>
+#include <Protocol/LoadedImage.h>
+
+#include <Guid/FileInfo.h>
+#include <Guid/FileSystemInfo.h>
+#include <Guid/FileSystemVolumeLabelInfo.h>
+
+#endif /* __MAKEWITH_GNUEFI */
 
 /* Maximum size to be used for paths */
 #ifndef PATH_MAX
