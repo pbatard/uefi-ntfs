@@ -78,7 +78,7 @@ static CHAR16* GetDriverName(CONST EFI_HANDLE DriverHandle)
  * To fix it we disconnect drivers that connected to DiskIo BY_DRIVER if this
  * is a partition volume and if those drivers did not produce file system.
  *
- * This code was originally derived from similar BSD-3-Clause license one
+ * This code was originally derived from similar BSD-3-Clause licensed one
  * (a.k.a. Modified BSD License, which can be used in GPLv2+ works), found at:
  * https://sourceforge.net/p/cloverefiboot/code/3294/tree/rEFIt_UEFI/refit/main.c#l1271
  */
@@ -202,9 +202,9 @@ static EFI_STATUS PrintSystemInfo(VOID)
 		SecureBootStatus = -1;
 	// Wasteful, but we can't highlight "Enabled"/"Setup" from a %s argument...
 	if (SecureBootStatus > 0)
-		PrintInfo(L"Secure Boot status: %HEnabled%N");
+		PrintInfo(L"Secure Boot status: Enabled");
 	else if (SecureBootStatus < 0)
-		PrintInfo(L"Secure Boot status: %ESetup%N");
+		PrintInfo(L"Secure Boot status: Setup");
 	else
 		PrintInfo(L"Secure Boot status: Disabled");
 
@@ -222,6 +222,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 	CONST CHAR16* FsName[] = { L"NTFS", L"exFAT" };
 	CONST CHAR16* DriverName[] = { L"ntfs", L"exfat" };
 	CHAR16 DriverPath[64], LoaderPath[64];
+	CHAR16* DevicePathString;
 	EFI_LOADED_IMAGE_PROTOCOL *LoadedImage;
 	EFI_STATUS Status;
 	EFI_DEVICE_PATH *DevicePath, *ParentDevicePath = NULL, *BootDiskPath = NULL;
@@ -245,7 +246,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 	// The platform logo may still be displayed → remove it
 	SystemTable->ConOut->ClearScreen(SystemTable->ConOut);
 
-	Print(L"\n%H*** UEFI:NTFS %s (%s) ***%N\n\n", VERSION_STRING, Arch);
+	Print(L"\n*** UEFI:NTFS %s (%s) ***\n\n", VERSION_STRING, Arch);
 #if defined(_GNU_EFI)
 	PrintSystemInfo();
 #endif
@@ -265,7 +266,9 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 	BootDiskPath = GetParentDevice(BootPartitionPath);
 
 	PrintInfo(L"Searching for target partition on boot disk:");
-	PrintInfo(L"  %D", BootDiskPath);
+	DevicePathString = DevicePathToString(BootDiskPath);
+	PrintInfo(L"  %s", DevicePathString);
+	SafeFree(DevicePathString);
 	// Enumerate all disk handles
 	Status = gBS->LocateHandleBuffer(ByProtocol, &gEfiDiskIoProtocolGuid,
 		NULL, &HandleCount, &Handles);
@@ -318,7 +321,9 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 		goto out;
 	}
 	PrintInfo(L"Found %s target partition:", FsName[FsType]);
-	PrintInfo(L"  %D", DevicePath);
+	DevicePathString = DevicePathToString(DevicePath);
+	PrintInfo(L"  %s", DevicePathString);
+	SafeFree(DevicePathString);
 
 	PrintInfo(L"Checking if target partition needs the %s service", FsName[FsType]);
 	// Test for presence of file system protocol (to see if there already is
@@ -327,10 +332,10 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 		(VOID**)&Volume, MainImageHandle, NULL, EFI_OPEN_PROTOCOL_TEST_PROTOCOL);
 	if (Status == EFI_SUCCESS) {
 		// A filesystem driver is already set => no need to start ours
-		PrintWarning(L"  An %s service is already loaded", FsName[FsType]);
+		PrintWarning(L"  An %s driver service is already loaded", FsName[FsType]);
 	} else if (Status == EFI_UNSUPPORTED) {
 		// Partition is not being serviced by a file system driver yet => start ours
-		PrintInfo(L"Starting %s partition service:", FsName[FsType]);
+		PrintInfo(L"Starting %s driver service:", FsName[FsType]);
 
 		// Use 'rufus' in the driver path, so that we don't accidentally latch onto a user driver
 		UnicodeSPrint(DriverPath, ARRAY_SIZE(DriverPath), L"\\efi\\rufus\\%s_%s.efi", DriverName[FsType], Arch);
@@ -424,8 +429,14 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 	VolumeInfo = (EFI_FILE_SYSTEM_VOLUME_LABEL*)AllocateZeroPool(Size);
 	if (VolumeInfo != NULL) {
 		Status = Root->GetInfo(Root, &gEfiFileSystemVolumeLabelInfoIdGuid, &Size, VolumeInfo);
-		if ((Status == EFI_SUCCESS) && (VolumeInfo->VolumeLabel[0] != 0))
+		// Some UEFI firmwares return EFI_BUFFER_TOO_SMALL, even with
+		// a large enough buffer, unless the exact size is requested.
+		if ((Status == EFI_BUFFER_TOO_SMALL) && (Size <= FILE_INFO_SIZE))
+			Status = Root->GetInfo(Root, &gEfiFileSystemVolumeLabelInfoIdGuid, &Size, VolumeInfo);
+		if (Status == EFI_SUCCESS)
 			PrintInfo(L"  Volume label is '%s'", VolumeInfo->VolumeLabel);
+		else
+			PrintWarning(L"  Could not read volume label: [%d] %r\n", (Status & 0x7FFFFFFF), Status);
 		FreePool(VolumeInfo);
 	}
 
@@ -467,7 +478,7 @@ out:
 
 	// Wait for a keystroke on error
 	if (EFI_ERROR(Status)) {
-		Print(L"%H\nPress any key to exit.%N\n");
+		Print(L"\nPress any key to exit.\n");
 		gST->ConIn->Reset(gST->ConIn, FALSE);
 		gST->BootServices->WaitForEvent(1, &gST->ConIn->WaitForKey, &Event);
 	}

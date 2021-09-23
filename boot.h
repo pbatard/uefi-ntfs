@@ -82,17 +82,10 @@
 
 /*
  * Convenience macros to print informational, warning or error messages.
- * NB: In addition to the standard %-based flags, Print() supports the following:
- *   %N       Set output attribute to normal
- *   %H       Set output attribute to highlight
- *   %E       Set output attribute to error
- *   %B       Set output attribute to blue color
- *   %V       Set output attribute to green color
- *   %r       Human readable version of a status code
  */
 #define PrintInfo(fmt, ...)     Print(L"[INFO] " fmt L"\n", ##__VA_ARGS__)
-#define PrintWarning(fmt, ...)  Print(L"%E[WARN] " fmt L"%N\n", ##__VA_ARGS__)
-#define PrintError(fmt, ...)    Print(L"%E[FAIL] " fmt L": [%d] %r%N\n", ##__VA_ARGS__, (Status&0x7FFFFFFF), Status)
+#define PrintWarning(fmt, ...)  Print(L"[WARN] " fmt L"\n", ##__VA_ARGS__)
+#define PrintError(fmt, ...)    Print(L"[FAIL] " fmt L": [%d] %r\n", ##__VA_ARGS__, (Status&0x7FFFFFFF), Status)
 
 /* Convenience assertion macro */
 #define P_ASSERT(f, l, a)   if(!(a)) do { Print(L"*** ASSERT FAILED: %a(%d): %a ***\n", f, l, #a); while(1); } while(0)
