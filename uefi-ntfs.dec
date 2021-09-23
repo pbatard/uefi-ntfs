@@ -1,0 +1,16 @@
+## @file
+#  UEFI:NTFS Package
+#
+#  Copyright (c) 2021, Pete Batard <pete@akeo.ie>
+#
+##
+
+[Defines]
+  DEC_SPECIFICATION              = 0x00010005
+  PACKAGE_NAME                   = uefi-ntfs
+  PACKAGE_UNI_FILE               = uefi-ntfs.uni
+  PACKAGE_GUID                   = 30EF8F31-F121-47C4-886C-EA387D5DC520
+  PACKAGE_VERSION                = 1.0
+
+[UserExtensions.TianoCore."ExtraFiles"]
+  uefi-ntfs-extra.uni

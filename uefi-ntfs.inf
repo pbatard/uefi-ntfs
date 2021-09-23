@@ -1,0 +1,61 @@
+## @file
+#  Component Description File for UEFI:NTFS.
+#
+#  This bootloader attempts to load an NTFS file system driver,
+#  then mount an NTFS file system residing on the same disk and
+#  then invokes the relevant UEFI bootloader from the new volume.
+#
+#  Copyright (c) 2021, Pete Batard <pete@akeo.ie>
+#
+#  SPDX-License-Identifier: GPL-2.0-or-later
+#
+##
+
+[Defines]
+  INF_VERSION                = 0x00010005
+  BASE_NAME                  = uefi-ntfs
+  FILE_GUID                  = F4C3635A-68DB-4154-953D-A10F9C6C0036
+  MODULE_TYPE                = UEFI_APPLICATION
+  VERSION_STRING             = 1.0
+  ENTRY_POINT                = efi_main
+
+[Sources]
+  boot.c
+  path.c
+
+[Packages]
+  uefi-ntfs.dec
+  MdePkg/MdePkg.dec
+
+[LibraryClasses]
+  BaseMemoryLib
+  BaseLib
+  DebugLib
+  MemoryAllocationLib
+  UefiApplicationEntryPoint
+  UefiBootServicesTableLib
+  UefiLib
+  UefiRuntimeServicesTableLib
+  PcdLib
+
+[Guids]
+  gEfiFileSystemInfoGuid
+  gEfiFileSystemVolumeLabelInfoIdGuid
+
+[Protocols]
+  gEfiBlockIoProtocolGuid
+  gEfiBlockIo2ProtocolGuid
+  gEfiDevicePathToTextProtocolGuid
+  gEfiDiskIoProtocolGuid
+  gEfiDiskIo2ProtocolGuid
+  gEfiLoadedImageProtocolGuid 
+  gEfiSimpleFileSystemProtocolGuid
+  gEfiUnicodeCollationProtocolGuid
+  gEfiUnicodeCollation2ProtocolGuid
+
+[Pcd]
+  gEfiMdePkgTokenSpaceGuid.PcdUefiVariableDefaultLang
+  gEfiMdePkgTokenSpaceGuid.PcdUefiVariableDefaultPlatformLang
+
+[BuildOptions]
+  RELEASE_*_*_CC_FLAGS    = -Os -DMDEPKG_NDEBUG -DNDEBUG
