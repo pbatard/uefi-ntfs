@@ -1,10 +1,6 @@
 name: Linux (gcc with EDK2) build
 
-on:
-  push:
-    branches: [master]
-  pull_request:
-    branches: [master]
+on: [push, pull_request]
 
 env:
   BUILD_TYPE: RELEASE
