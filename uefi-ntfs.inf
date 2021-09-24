@@ -42,6 +42,8 @@
 [Guids]
   gEfiFileSystemInfoGuid
   gEfiFileSystemVolumeLabelInfoIdGuid
+  gEfiSmbiosTableGuid
+  gEfiSmbios3TableGuid
 
 [Protocols]
   gEfiBlockIoProtocolGuid

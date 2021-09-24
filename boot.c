@@ -142,61 +142,6 @@ static VOID DisconnectBlockingDrivers(VOID) {
 	FreePool(Handles);
 }
 
-#if defined(_GNU_EFI)
-
-/*
- * Query SMBIOS to display some info about the system hardware and UEFI firmware.
- * Also display the current Secure Boot status.
- */
-static EFI_STATUS PrintSystemInfo(VOID)
-{
-	EFI_STATUS Status;
-	SMBIOS_STRUCTURE_POINTER Smbios;
-	SMBIOS_STRUCTURE_TABLE* SmbiosTable;
-	SMBIOS3_STRUCTURE_TABLE* Smbios3Table;
-	UINT8 Found = 0, *Raw;
-	UINTN MaximumSize, ProcessedSize = 0;
-
-	PrintInfo(L"UEFI v%d.%d (%s, 0x%08X)", gST->Hdr.Revision >> 16, gST->Hdr.Revision & 0xFFFF,
-		gST->FirmwareVendor, gST->FirmwareRevision);
-
-	Status = LibGetSystemConfigurationTable(&SMBIOS3TableGuid, (VOID**)&Smbios3Table);
-	if (Status == EFI_SUCCESS) {
-		Smbios.Hdr = (SMBIOS_HEADER*)Smbios3Table->TableAddress;
-		MaximumSize = (UINTN)Smbios3Table->TableMaximumSize;
-	} else {
-		Status = LibGetSystemConfigurationTable(&SMBIOSTableGuid, (VOID**)&SmbiosTable);
-		if (EFI_ERROR(Status))
-			return EFI_NOT_FOUND;
-		Smbios.Hdr = (SMBIOS_HEADER*)(UINTN)SmbiosTable->TableAddress;
-		MaximumSize = (UINTN)SmbiosTable->TableLength;
-	}
-
-	while ((Smbios.Hdr->Type != 0x7F) && (Found < 2)) {
-		Raw = Smbios.Raw;
-		if (Smbios.Hdr->Type == 0) {
-			PrintInfo(L"%a %a", LibGetSmbiosString(&Smbios, Smbios.Type0->Vendor),
-				LibGetSmbiosString(&Smbios, Smbios.Type0->BiosVersion));
-			Found++;
-		}
-		if (Smbios.Hdr->Type == 1) {
-			PrintInfo(L"%a %a", LibGetSmbiosString(&Smbios, Smbios.Type1->Manufacturer),
-				LibGetSmbiosString(&Smbios, Smbios.Type1->ProductName));
-			Found++;
-		}
-		LibGetSmbiosString(&Smbios, -1);
-		ProcessedSize += (UINTN)Smbios.Raw - (UINTN)Raw;
-		if (ProcessedSize > MaximumSize) {
-			PrintWarning(L"Aborting system report due to noncompliant SMBIOS");
-			return EFI_ABORTED;
-		}
-	}
-
-	return EFI_SUCCESS;
-}
-
-#endif /* _GNUEFI */
-
 /*
  * Application entry-point
  * NB: This must be set to 'efi_main' for gnu-efi crt0 compatibility
@@ -232,9 +177,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 	gST->ConOut->ClearScreen(gST->ConOut);
 
 	Print(L"\n*** UEFI:NTFS %s (%s) ***\n\n", VERSION_STRING, Arch);
-#if defined(_GNU_EFI)
 	PrintSystemInfo();
-#endif
 	SecureBootStatus = GetSecureBootStatus();
 	PrintInfo(L"Secure Boot status: %s",
 		(SecureBootStatus > 0) ? L"Enabled" :

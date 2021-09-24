@@ -23,6 +23,12 @@
 #include <efistdarg.h>
 #include <libsmbios.h>
 
+#define gEfiSmbios3TableGuid SMBIOS3TableGuid
+#define gEfiSmbiosTableGuid SMBIOSTableGuid
+#define SMBIOS_STRUCTURE SMBIOS_HEADER
+#define SMBIOS_TABLE_ENTRY_POINT SMBIOS_STRUCTURE_TABLE
+#define SMBIOS_TABLE_3_0_ENTRY_POINT SMBIOS3_STRUCTURE_TABLE
+
 #else /* EDK2 */
 
 #include <Base.h>
@@ -52,6 +58,9 @@
 #include <Guid/FileInfo.h>
 #include <Guid/FileSystemInfo.h>
 #include <Guid/FileSystemVolumeLabelInfo.h>
+#include <Guid/SmBios.h>
+
+#include <IndustryStandard/SmBios.h>
 
 #endif /* __MAKEWITH_GNUEFI */
 
@@ -89,6 +98,17 @@
 
 /* Convenience assertion macro */
 #define P_ASSERT(f, l, a)   if(!(a)) do { Print(L"*** ASSERT FAILED: %a(%d): %a ***\n", f, l, #a); while(1); } while(0)
+
+/*
+ * EDK2 and gnu-efi's CompareGuid() return opposite values for a match!
+ * EDK2 returns boolean TRUE, whereas gnu-efi returns INTN 0, so we
+ * define a common boolean macro that follows EDK2 convention always.
+ */
+#if defined(_GNU_EFI)
+#define COMPARE_GUID(a, b) (CompareGuid(a, b) == 0)
+#else
+#define COMPARE_GUID CompareGuid
+#endif
 
 /*
  * Secure string length, that asserts if the string is NULL or if
@@ -158,4 +178,5 @@ EFI_DEVICE_PATH* GetParentDevice(CONST EFI_DEVICE_PATH* DevicePath);
 INTN CompareDevicePaths(CONST EFI_DEVICE_PATH* dp1, CONST EFI_DEVICE_PATH* dp2);
 EFI_STATUS SetPathCase(CONST EFI_FILE_HANDLE Root, CHAR16* Path);
 CHAR16* DevicePathToString(CONST EFI_DEVICE_PATH* DevicePath);
+EFI_STATUS PrintSystemInfo(VOID);
 INTN GetSecureBootStatus(VOID);
