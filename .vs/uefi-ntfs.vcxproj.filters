@@ -24,6 +24,9 @@
     <ClCompile Include="..\path.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\system.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\boot.h">

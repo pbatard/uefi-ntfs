@@ -25,9 +25,6 @@
 /* Global handle for the current executable */
 static EFI_HANDLE MainImageHandle = NULL;
 
-/* Tri-state status for Secure Boot: -1 = Setup, 0 = Disabled, 1 = Enabled */
-static INTN SecureBootStatus = 0;
-
 /* Strings used to identify the plaform */
 #if defined(_M_X64) || defined(__x86_64__)
   static CHAR16* Arch = L"x64";
@@ -157,7 +154,7 @@ static EFI_STATUS PrintSystemInfo(VOID)
 	SMBIOS_STRUCTURE_POINTER Smbios;
 	SMBIOS_STRUCTURE_TABLE* SmbiosTable;
 	SMBIOS3_STRUCTURE_TABLE* Smbios3Table;
-	UINT8 Found = 0, *Raw, *SecureBoot, *SetupMode;
+	UINT8 Found = 0, *Raw;
 	UINTN MaximumSize, ProcessedSize = 0;
 
 	PrintInfo(L"UEFI v%d.%d (%s, 0x%08X)", gST->Hdr.Revision >> 16, gST->Hdr.Revision & 0xFFFF,
@@ -195,19 +192,6 @@ static EFI_STATUS PrintSystemInfo(VOID)
 		}
 	}
 
-	SecureBoot = LibGetVariable(L"SecureBoot", &EfiGlobalVariable);
-	SetupMode = LibGetVariable(L"SetupMode", &EfiGlobalVariable);
-	SecureBootStatus = ((SecureBoot != NULL) && (*SecureBoot != 0)) ? 1 : 0;
-	if ((SetupMode != NULL) && (*SetupMode != 0))
-		SecureBootStatus = -1;
-	// Wasteful, but we can't highlight "Enabled"/"Setup" from a %s argument...
-	if (SecureBootStatus > 0)
-		PrintInfo(L"Secure Boot status: Enabled");
-	else if (SecureBootStatus < 0)
-		PrintInfo(L"Secure Boot status: Setup");
-	else
-		PrintInfo(L"Secure Boot status: Disabled");
-
 	return EFI_SUCCESS;
 }
 
@@ -235,6 +219,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 	CHAR8* Buffer, FsMagic[2][8] = { 
 		{ 'N', 'T', 'F', 'S', ' ', ' ', ' ', ' '} ,
 		{ 'E', 'X', 'F', 'A', 'T', ' ', ' ', ' '} };
+	INTN SecureBootStatus;
 	UINTN Index, FsType = 0, Try, Event, HandleCount = 0, Size;
 	BOOLEAN SameDevice;
 
@@ -244,12 +229,16 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 	MainImageHandle = ImageHandle;
 
 	// The platform logo may still be displayed → remove it
-	SystemTable->ConOut->ClearScreen(SystemTable->ConOut);
+	gST->ConOut->ClearScreen(gST->ConOut);
 
 	Print(L"\n*** UEFI:NTFS %s (%s) ***\n\n", VERSION_STRING, Arch);
 #if defined(_GNU_EFI)
 	PrintSystemInfo();
 #endif
+	SecureBootStatus = GetSecureBootStatus();
+	PrintInfo(L"Secure Boot status: %s",
+		(SecureBootStatus > 0) ? L"Enabled" :
+		((SecureBootStatus < 0) ? L"Setup" : L"Disabled"));
 
 	Status = gBS->OpenProtocol(MainImageHandle, &gEfiLoadedImageProtocolGuid,
 		(VOID**)&LoadedImage, MainImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
@@ -354,7 +343,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 		if (EFI_ERROR(Status)) {
 			// Some platforms (e.g. Intel NUCs) return EFI_ACCESS_DENIED for Secure Boot
 			// validation errors. Return a much more explicit EFI_SECURITY_VIOLATION then.
-			if ((Status == EFI_ACCESS_DENIED) && (SecureBootStatus > 1))
+			if ((Status == EFI_ACCESS_DENIED) && (SecureBootStatus >= 1))
 				Status = EFI_SECURITY_VIOLATION;
 			PrintError(L"  Unable to load driver '%s'", DriverPath);
 			goto out;
@@ -451,7 +440,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 	// At this stage, our DevicePath is the partition we are after
 	PrintInfo(L"Launching '%s'...", &LoaderPath[1]);
 
-	// Now attempt to chain load bootx64.efi on the target partition
+	// Now attempt to chain load boot###.efi on the target partition
 	DevicePath = FileDevicePath(Handles[Index], LoaderPath);
 	if (DevicePath == NULL) {
 		Status = EFI_DEVICE_ERROR;
@@ -461,7 +450,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 	Status = gBS->LoadImage(FALSE, ImageHandle, DevicePath, NULL, 0, &DriverHandle);
 	SafeFree(DevicePath);
 	if (EFI_ERROR(Status)) {
-		if ((Status == EFI_ACCESS_DENIED) && (SecureBootStatus > 1))
+		if ((Status == EFI_ACCESS_DENIED) && (SecureBootStatus >= 1))
 			Status = EFI_SECURITY_VIOLATION;
 		PrintError(L"  Load failure");
 		goto out;

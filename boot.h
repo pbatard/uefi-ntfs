@@ -152,9 +152,10 @@ static __inline VOID _SafeStrCpy(CHAR16* Destination, UINTN DestMax,
 #define SafeStrCpy(d, l, s) _SafeStrCpy(d, l, s, __FILE__, __LINE__)
 
 /*
- * Path function prototypes
+ * Function prototypes
  */
 EFI_DEVICE_PATH* GetParentDevice(CONST EFI_DEVICE_PATH* DevicePath);
 INTN CompareDevicePaths(CONST EFI_DEVICE_PATH* dp1, CONST EFI_DEVICE_PATH* dp2);
 EFI_STATUS SetPathCase(CONST EFI_FILE_HANDLE Root, CHAR16* Path);
 CHAR16* DevicePathToString(CONST EFI_DEVICE_PATH* DevicePath);
+INTN GetSecureBootStatus(VOID);

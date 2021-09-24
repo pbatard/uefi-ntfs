@@ -100,7 +100,7 @@ CFLAGS         += -DCONFIG_$(GNUEFI_ARCH) -D__MAKEWITH_GNUEFI -DGNU_EFI_USE_MS_A
 LDFLAGS        += -L$(GNUEFI_DIR)/$(GNUEFI_ARCH)/lib -e $(EP_PREFIX)efi_main
 LDFLAGS        += -s -Wl,-Bsymbolic -nostdlib -shared
 LIBS            = -lefi $(CRT0_LIBS)
-OBJS            = boot.o path.o
+OBJS            = boot.o path.o system.o
 
 ifeq (, $(shell which $(CC)))
   $(error The selected compiler ($(CC)) was not found)

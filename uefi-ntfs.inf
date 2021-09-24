@@ -22,6 +22,7 @@
 [Sources]
   boot.c
   path.c
+  system.c
 
 [Packages]
   uefi-ntfs.dec

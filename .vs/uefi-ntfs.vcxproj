@@ -396,6 +396,7 @@
   <ItemGroup>
     <ClCompile Include="..\boot.c" />
     <ClCompile Include="..\path.c" />
+    <ClCompile Include="..\system.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\debug.vbs" />
