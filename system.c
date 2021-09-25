@@ -25,7 +25,7 @@
 static EFI_STATUS GetSystemConfigurationTable(EFI_GUID* TableGuid, VOID** Table)
 {
 	UINTN Index;
-	P_ASSERT(__FILE__, __LINE__, Table != NULL);
+	V_ASSERT(Table != NULL);
 
 	for (Index = 0; Index < gST->NumberOfTableEntries; Index++) {
 		if (COMPARE_GUID(TableGuid, &(gST->ConfigurationTable[Index].VendorGuid))) {

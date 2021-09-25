@@ -89,15 +89,38 @@
 /* FreePool() replacement, that NULLs the freed pointer. */
 #define SafeFree(p)          do { FreePool(p); p = NULL;} while(0)
 
+/* Maximum line size for our banner */
+#define BANNER_LINE_SIZE     79
+
+/*
+ * Console colours we will be using
+ */
+#define TEXT_DEFAULT         EFI_TEXT_ATTR(EFI_LIGHTGRAY, EFI_BLACK)
+#define TEXT_REVERSED        EFI_TEXT_ATTR(EFI_BLACK, EFI_LIGHTGRAY)
+#define TEXT_YELLOW          EFI_TEXT_ATTR(EFI_YELLOW, EFI_BLACK)
+#define TEXT_RED             EFI_TEXT_ATTR(EFI_LIGHTRED, EFI_BLACK)
+#define TEXT_GREEN           EFI_TEXT_ATTR(EFI_LIGHTGREEN, EFI_BLACK)
+#define TEXT_WHITE           EFI_TEXT_ATTR(EFI_WHITE, EFI_BLACK)
+
+/*
+ * Set and restore the console text colour
+ */
+#define SetText(attr)        gST->ConOut->SetAttribute(gST->ConOut, (attr))
+#define DefText()            gST->ConOut->SetAttribute(gST->ConOut, TEXT_DEFAULT)
+
 /*
  * Convenience macros to print informational, warning or error messages.
  */
-#define PrintInfo(fmt, ...)     Print(L"[INFO] " fmt L"\n", ##__VA_ARGS__)
-#define PrintWarning(fmt, ...)  Print(L"[WARN] " fmt L"\n", ##__VA_ARGS__)
-#define PrintError(fmt, ...)    Print(L"[FAIL] " fmt L": [%d] %r\n", ##__VA_ARGS__, (Status&0x7FFFFFFF), Status)
+#define PrintInfo(fmt, ...)  do { SetText(TEXT_WHITE); Print(L"[INFO]"); DefText(); \
+                                     Print(L" " fmt L"\n", ##__VA_ARGS__); } while(0)
+#define PrintWarning(fmt, ...)  do { SetText(TEXT_YELLOW); Print(L"[WARN]"); DefText(); \
+                                     Print(L" " fmt L"\n", ##__VA_ARGS__); } while(0)
+#define PrintError(fmt, ...)    do { SetText(TEXT_RED); Print(L"[FAIL]"); DefText(); \
+                                     Print(L" " fmt L": [%d] %r\n", ##__VA_ARGS__, (Status&0x7FFFFFFF), Status); } while (0)
 
 /* Convenience assertion macro */
 #define P_ASSERT(f, l, a)   if(!(a)) do { Print(L"*** ASSERT FAILED: %a(%d): %a ***\n", f, l, #a); while(1); } while(0)
+#define V_ASSERT(a)         P_ASSERT(__FILE__, __LINE__, a)
 
 /*
  * EDK2 and gnu-efi's CompareGuid() return opposite values for a match!

@@ -143,6 +143,52 @@ static VOID DisconnectBlockingDrivers(VOID) {
 }
 
 /*
+ * Display a centered application banner
+ */
+static VOID DisplayBanner(VOID)
+{
+	UINTN i, Len;
+	CHAR16 String[BANNER_LINE_SIZE + 1];
+
+	// The platform logo may still be displayed → remove it
+	gST->ConOut->ClearScreen(gST->ConOut);
+
+	SetText(TEXT_REVERSED);
+	Print(L"\n%c", BOXDRAW_DOWN_RIGHT);
+	for (i = 0; i < BANNER_LINE_SIZE - 2; i++)
+		Print(L"%c", BOXDRAW_HORIZONTAL);
+	Print(L"%c\n", BOXDRAW_DOWN_LEFT);
+
+	UnicodeSPrint(String, ARRAY_SIZE(String), L"UEFI:NTFS %s (%s)", VERSION_STRING, Arch);
+	Len = SafeStrLen(String);
+	V_ASSERT(Len < BANNER_LINE_SIZE);
+	Print(L"%c", BOXDRAW_VERTICAL);
+	for (i = 1; i < (BANNER_LINE_SIZE - Len) / 2; i++)
+		Print(L" ");
+	Print(String);
+	for (i += Len; i < BANNER_LINE_SIZE - 1; i++)
+		Print(L" ");
+	Print(L"%c\n", BOXDRAW_VERTICAL);
+
+	UnicodeSPrint(String, ARRAY_SIZE(String), L"<https://un.akeo.ie>");
+	Len = SafeStrLen(String);
+	V_ASSERT(Len < BANNER_LINE_SIZE);
+	Print(L"%c", BOXDRAW_VERTICAL);
+	for (i = 1; i < (BANNER_LINE_SIZE - Len) / 2; i++)
+		Print(L" ");
+	Print(String);
+	for (i += Len; i < BANNER_LINE_SIZE - 1; i++)
+		Print(L" ");
+	Print(L"%c\n", BOXDRAW_VERTICAL);
+
+	Print(L"%c", BOXDRAW_UP_RIGHT);
+	for (i = 0; i < 77; i++)
+		Print(L"%c", BOXDRAW_HORIZONTAL);
+	Print(L"%c\n\n", BOXDRAW_UP_LEFT);
+	DefText();
+}
+
+/*
  * Application entry-point
  * NB: This must be set to 'efi_main' for gnu-efi crt0 compatibility
  */
@@ -173,15 +219,20 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 #endif
 	MainImageHandle = ImageHandle;
 
-	// The platform logo may still be displayed → remove it
-	gST->ConOut->ClearScreen(gST->ConOut);
-
-	Print(L"\n*** UEFI:NTFS %s (%s) ***\n\n", VERSION_STRING, Arch);
+	DisplayBanner();
 	PrintSystemInfo();
 	SecureBootStatus = GetSecureBootStatus();
-	PrintInfo(L"Secure Boot status: %s",
-		(SecureBootStatus > 0) ? L"Enabled" :
-		((SecureBootStatus < 0) ? L"Setup" : L"Disabled"));
+	SetText(TEXT_WHITE);
+	Print(L"[INFO]");
+	DefText();
+	Print(L" Secure Boot status: ");
+	if (SecureBootStatus == 0) {
+		Print(L"Disabled\n");
+	} else {
+		SetText((SecureBootStatus > 0) ? TEXT_WHITE : TEXT_YELLOW);
+		Print(L"%s\n", (SecureBootStatus > 0) ? L"Enabled" : L"Setup");
+		DefText();
+	}
 
 	Status = gBS->OpenProtocol(MainImageHandle, &gEfiLoadedImageProtocolGuid,
 		(VOID**)&LoadedImage, MainImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
@@ -410,7 +461,9 @@ out:
 
 	// Wait for a keystroke on error
 	if (EFI_ERROR(Status)) {
+		SetText(TEXT_YELLOW);
 		Print(L"\nPress any key to exit.\n");
+		DefText();
 		gST->ConIn->Reset(gST->ConIn, FALSE);
 		gST->BootServices->WaitForEvent(1, &gST->ConIn->WaitForKey, &Event);
 	}

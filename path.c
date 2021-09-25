@@ -125,7 +125,7 @@ EFI_STATUS SetPathCase(CONST EFI_FILE_HANDLE Root, CHAR16* Path)
 
 	Len = SafeStrLen(Path);
 	/* The checks above ensure that Len is always >= 1, but just in case... */
-	P_ASSERT(__FILE__, __LINE__, Len >= 1);
+	V_ASSERT(Len >= 1);
 
 	// Find the last backslash in the path
 	for (i = Len - 1; (i != 0) && (Path[i] != L'\\'); i--);
