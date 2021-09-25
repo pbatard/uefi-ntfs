@@ -39,10 +39,12 @@ jobs:
 
     - name: Set version
       id: set_version
-      run: echo "::set-output name=version::$(git describe --tags --dirty)"
+      run: echo "::set-output name=version::$(git describe --tags)"
 
     - name: Create version.h file
-      run: echo '#define VERSION_STRING L"${{steps.set_version.outputs.version}}"' > version.h
+      run: |
+        git update-index --skip-worktree version.h
+        echo '#define VERSION_STRING L"${{steps.set_version.outputs.version}}"' > version.h
 
     - name: Set up Linux environment
       run: sudo apt install -y ${{matrix.TARGET_PKGS}}

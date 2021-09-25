@@ -127,10 +127,6 @@ all: $(GNUEFI_DIR)/$(GNUEFI_ARCH)/lib/libefi.a boot.efi
 $(GNUEFI_DIR)/$(GNUEFI_ARCH)/lib/libefi.a:
 	$(MAKE) -C$(GNUEFI_DIR) CROSS_COMPILE=$(CROSS_COMPILE) ARCH=$(GNUEFI_ARCH) $(GNUEFI_LIBS)
 
-version.h:
-	@echo  [GEN] $(notdir $@)
-	@echo  '#define VERSION_STRING L"$(shell git describe --tags --dirty)"' > version.h
-
 %.efi: $(OBJS)
 	@echo  [LD]  $(notdir $@)
 ifeq ($(CRT0_LIBS),)
@@ -142,7 +138,7 @@ else
 	@rm -f $*.elf
 endif
 
-%.o: %.c version.h
+%.o: %.c
 	@echo  [CC]  $(notdir $@)
 	@$(CC) $(CFLAGS) -ffreestanding -c $<
 

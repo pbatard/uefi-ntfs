@@ -113,36 +113,36 @@ git submodule update --init
 
 ## Compilation and testing
 
-If using the Visual Studio solution, just press `F5` to have the application
-compiled and launched in the QEMU emulator.
+* If using the Visual Studio solution (`.sln`), just press <kbd>F5</kbd> to have
+the application compiled and launched in the QEMU emulator.
 
-If using gcc with gnu-efi, you should be able to simply issue `make`. If needed
-you can also issue something like `make ARCH=<arch> CROSS_COMPILE=<tuple>` where
-`<arch>` is one of `ia32`, `x64`, `arm` or `aa64` and tuple is the one for your
-cross-compiler (e.g. `aarch64-linux-gnu-`).
-
+* If using gcc with gnu-efi, you should be able to simply issue `make`.  
+If needed you can also issue something like `make ARCH=<arch> CROSS_COMPILE=<tuple>`
+where `<arch>` is one of `ia32`, `x64`, `arm` or `aa64` and tuple is the one for
+your cross-compiler (e.g. `aarch64-linux-gnu-`).  
 You can also debug through QEMU by specifying `qemu` to your `make` invocation.
 Be mindful however that this turns the special `_DEBUG` mode on, and you should
 run make without invoking `qemu` to produce proper release binaries.
 
-If compiling with EDK2, you will first need to generate a `version.h` file with
-something like:
-```
-echo  '#define VERSION_STRING L"<MY_VERSION>"' > version.h
-```
-where `<MY_VERSION>` could be the output of `git describe --tags --dirty` for
-instance.
+* If using VS2019 with EDK2 on Windows, assuming that your EDK2 directory is in
+`D:\edk2` and that `nasm` resides in `D:\edk2\BaseTools\Bin\Win32\`, you should
+be able to issue:  
 
-Then, for Windows, assuming your EDK2 directory is in `D:\edk2` and that `nasm`
-resides in `D:\edk2\BaseTools\Bin\Win32\`, you could issue:
-```
-set EDK2_PATH=D:\edk2
-set NASM_PREFIX=D:\edk2\BaseTools\Bin\Win32\
-set WORKSPACE=%CD%
-set PACKAGES_PATH=%WORKSPACE%;%EDK2_PATH%
-%EDK2_PATH%\edksetup.bat reconfig
-build -a X64 -b RELEASE -t VS2019 -p uefi-ntfs.dsc
-```
+        set EDK2_PATH=D:\edk2
+        set NASM_PREFIX=D:\edk2\BaseTools\Bin\Win32\
+        set WORKSPACE=%CD%
+        set PACKAGES_PATH=%WORKSPACE%;%EDK2_PATH%
+        %EDK2_PATH%\edksetup.bat reconfig
+        build -a X64 -b RELEASE -t VS2019 -p uefi-ntfs.dsc
+
+* If using gcc with EDK2 on Linux, and assuming that your edk2 directory resides
+in `/usr/src/edk2`:  
+
+        export EDK2_PATH="/usr/src/edk2"
+        export WORKSPACE=$PWD
+        export PACKAGES_PATH=$WORKSPACE:$EDK2_PATH
+        . $EDK2_PATH/edksetup.sh --reconfig
+        build -a X64 -b RELEASE -t GCC5 -p uefi-ntfs.dsc
 
 ## Download and installation
 
