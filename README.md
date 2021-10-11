@@ -83,14 +83,19 @@ Now, there are two things to be said about this:
 
    Also, because we are an independent Open Source developer, and not a large
    corporation, we do have to jump through a lot of additional (and expensive)
-   hoops in order to gain access to the Secure Boot signing process.
+   hoops in order to gain access to the Secure Boot signing process. Worst,
+   even after we have jumped through all these hoops, we are still finding that
+   the Microsoft process for Secure Boot signing is so dismally designed that
+   we are literally running into [hurdle](https://www.microsoftpartnercommunity.com/t5/Feedback-Support-Discussions/Cannot-complete-Hardware-Developer-Program-registration-page/m-p/47832#M2021)
+   after [hurdle](https://docs.microsoft.com/en-us/answers/questions/461242/microsoft-allows-sha2-only-signature-algorithm.html)
+   after [hurdle](https://user-images.githubusercontent.com/1206968/136803095-004aa10e-0fc4-4e0f-8ef3-84a12f66fa52.png)...
 
    The end result of this is that the process of making UEFI:NTFS compatible
-   with Secure Boot is likely to take time and that, since Microsoft is the
-   sole judge, jury, and executioner of the signing process, even as we can
-   demonstrate that our binaries are safe on account of being
-   produced from public source in a 100% transparent manner, we can not even
-   guarantee that UEFI:NTFS will be accepted for Secure Boot signing...
+   with Secure Boot is likely to take time and also that, since Microsoft is
+   the sole judge, jury, and executioner of the signing process, we can not
+   even guarantee that UEFI:NTFS will ultimately be accepted for Secure Boot
+   signing, even as we can demonstrate that our binaries are safe on account
+   of being produced from public source in a 100% transparent manner, ...
 
 ## Prerequisites
 
