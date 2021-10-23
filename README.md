@@ -52,50 +52,23 @@ The way UEFI:NTFS works, in conjunction with Rufus, is as follows:
   that resides there. This achieves the exact same outcome as if the UEFI
   firmware had native support for NTFS and could boot straight from it.
 
-## Limitations
+## Secure Boot compatibility
 
-__[Secure Boot](https://en.wikipedia.org/wiki/Unified_Extensible_Firmware_Interface#Secure_boot)
-must currently be disabled for UEFI:NTFS to work__.
+* UEFI:NTFS is compatible with Secure Boot and has been signed by Microsoft.
 
-Now, there are two things to be said about this:
+* You can find Secure Boot signed binaries (for x86_64, x86_32 and ARM64) in the
+  [`uefi-ntfs.img` archive of Rufus](https://github.com/pbatard/rufus/tree/master/res/uefi).
 
-1. If you are using UEFI:NTFS to install Windows, then __temporarily__ disabling
-   Secure Boot is not as big deal as you think it is.
+* Note however that, due to Microsoft [arbitrary restrictions regarding GPLv3](https://techcommunity.microsoft.com/t5/hardware-dev-center/updated-uefi-signing-requirements/ba-p/1062916)
+  the only drivers that can currently be used with UEFI:NTFS in a Secure Boot
+  environment are the GPLv2 licensed [ntfs-3g ones](https://github.com/pbatard/ntfs-3g).
+  Especially, the NTFS and exFAT drivers from EfiFs, which are derived from
+  GRUB 2.0, and therefore GPLv3, can not be submitted to Microsoft for signing.
 
-   This is because all Secure Boot does, really, is establish trust that the
-   files you are booting from have not been maliciously altered... which you
-   can pretty much establish yourself if you validated the checksum of the ISO
-   and ran your media creation from an environment that you trust.
-
-   For more on this, please see the second part
-   from [this entry](https://github.com/pbatard/rufus/wiki/FAQ#Blah_UEFI_Blah_FAT32_therefore_Rufus_should_Blah)
-   of the Rufus FAQ.
-
-2. We are working on producing a Secure Boot compatible version of UEFI:NTFS.
-
-   However, due to Microsoft having arbitrarily decided that
-   [they would not sign anything that is GPLv3](https://techcommunity.microsoft.com/t5/hardware-dev-center/updated-uefi-signing-requirements/ba-p/1062916)
-   we are unable to use our existing [EfiFs](https://github.com/pbatard/efifs)
-   GPLv3 NTFS driver to do that, as it is derived from GRUB which is GPLv3.
-   So we've had to invest months of development time to produce a new
-   [GPLv2 NTFS driver](https://github.com/pbatard/ntfs-3g), in order to meet
-   Microsoft's arbitrary rules for Secure Boot signing.
-
-   Also, because we are an independent Open Source developer, and not a large
-   corporation, we do have to jump through a lot of additional (and expensive)
-   hoops in order to gain access to the Secure Boot signing process. Worst,
-   even after we have jumped through all these hoops, we are still finding that
-   the Microsoft process for Secure Boot signing is so dismally designed that
-   we are literally running into [hurdle](https://www.microsoftpartnercommunity.com/t5/Feedback-Support-Discussions/Cannot-complete-Hardware-Developer-Program-registration-page/m-p/47832#M2021)
-   after [hurdle](https://docs.microsoft.com/en-us/answers/questions/461242/microsoft-allows-sha2-only-signature-algorithm.html)
-   after [hurdle](https://user-images.githubusercontent.com/1206968/136803095-004aa10e-0fc4-4e0f-8ef3-84a12f66fa52.png)...
-
-   The end result of this is that the process of making UEFI:NTFS compatible
-   with Secure Boot is likely to take time and also that, since Microsoft is
-   the sole judge, jury, and executioner of the signing process, we can not
-   even guarantee that UEFI:NTFS will ultimately be accepted for Secure Boot
-   signing, even as we can demonstrate that our binaries are safe on account
-   of being produced from public source in a 100% transparent manner, ...
+* Finally, Microsoft's current Secure Boot signing policies require additional
+  validation for 32-bit ARM, therefore the 32-bit ARM binaries are not Secure
+  Boot signed. This does not affect 64-bit ARM (a.k.a. `ARM64`/`AARCH64`/`AA64`)
+  for which we have fully Secure Boot signed binaries.
 
 ## Prerequisites
 
