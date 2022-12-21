@@ -36,7 +36,9 @@ jobs:
       uses: microsoft/setup-msbuild@v1
 
     - name: Build with Coverity
-      run: cov-build.exe --dir cov-int msbuild ${{ env.SOLUTION_FILE_PATH }} /m /p:Configuration=${{ env.BUILD_CONFIGURATION }},Platform=${{ env.TARGET_PLATFORM }}
+      run: |
+        cov-configure --msvc
+        cov-build.exe --dir cov-int msbuild ${{ env.SOLUTION_FILE_PATH }} /m /p:Configuration=${{ env.BUILD_CONFIGURATION }},Platform=${{ env.TARGET_PLATFORM }}
 
     - name: Upload Coverity build for analysis
       run: |

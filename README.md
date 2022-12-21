@@ -1,4 +1,4 @@
-[![Build status](https://img.shields.io/github/workflow/status/pbatard/uefi-ntfs/Windows%20%28MSVC%20with%20gnu-efi%29%20build.svg?style=flat-square)](https://github.com/pbatard/uefi-ntfs/actions)
+[![Build status](https://img.shields.io/github/actions/workflow/status/pbatard/uefi-ntfs/windows.yml?style=flat-square)](https://github.com/pbatard/uefi-ntfs/actions)
 [![Coverity Scan Build Status](https://img.shields.io/coverity/scan/23361.svg?style=flat-square)](https://scan.coverity.com/projects/pbatard-uefi-ntfs)
 [![Licence](https://img.shields.io/badge/license-GPLv2-blue.svg?style=flat-square)](https://www.gnu.org/licenses/gpl-2.0.en.html)
 
@@ -72,7 +72,7 @@ The way UEFI:NTFS works, in conjunction with Rufus, is as follows:
 
 ## Prerequisites
 
-* [Visual Studio 2019](https://www.visualstudio.com/vs/community/) or
+* [Visual Studio 2022](https://www.visualstudio.com/vs/community/) or
   [MinGW](http://www.mingw.org/)/[MinGW64](http://mingw-w64.sourceforge.net/)
   (preferably installed using [msys2](https://sourceforge.net/projects/msys2/))
   or gcc
@@ -102,7 +102,7 @@ You can also debug through QEMU by specifying `qemu` to your `make` invocation.
 Be mindful however that this turns the special `_DEBUG` mode on, and you should
 run make without invoking `qemu` to produce proper release binaries.
 
-* If using VS2019 with EDK2 on Windows, assuming that your EDK2 directory is in
+* If using VS2022 with EDK2 on Windows, assuming that your EDK2 directory is in
 `D:\edk2` and that `nasm` resides in `D:\edk2\BaseTools\Bin\Win32\`, you should
 be able to issue:  
 
@@ -111,7 +111,7 @@ be able to issue:
         set WORKSPACE=%CD%
         set PACKAGES_PATH=%WORKSPACE%;%EDK2_PATH%
         %EDK2_PATH%\edksetup.bat reconfig
-        build -a X64 -b RELEASE -t VS2019 -p uefi-ntfs.dsc
+        build -a X64 -b RELEASE -t VS2022 -p uefi-ntfs.dsc
 
 * If using gcc with EDK2 on Linux, and assuming that your edk2 directory resides
 in `/usr/src/edk2`:  
@@ -133,10 +133,10 @@ If you create a partition of the same size at the end of your drive and copy
 there (in DD mode of course), then you should have everything you need to make
 the first NTFS partition on that drive UEFI bootable.
 
-## Visual Studio 2019 and ARM/ARM64 support
+## Visual Studio 2022 and ARM/ARM64 support
 
 Please be mindful that, to enable ARM or ARM64 compilation support in Visual Studio
-2019, you __MUST__ go to the _Individual components_ screen in the setup application
+2022, you __MUST__ go to the _Individual components_ screen in the setup application
 and select the ARM/ARM64 build tools there, as they do __NOT__ appear in the default
 _Workloads_ screen:
 
