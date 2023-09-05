@@ -192,8 +192,11 @@ static VOID DisplayBanner(VOID)
  * Application entry-point
  * NB: This must be set to 'efi_main' for gnu-efi crt0 compatibility
  */
-EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
+EFI_STATUS EFIAPI efi_main(EFI_HANDLE BaseImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 {
+	CONST CHAR8 FsMagic[2][8] = {
+		{ 'N', 'T', 'F', 'S', ' ', ' ', ' ', ' '} ,
+		{ 'E', 'X', 'F', 'A', 'T', ' ', ' ', ' '} };
 	CONST CHAR16* FsName[] = { L"NTFS", L"exFAT" };
 	CONST CHAR16* DriverName[] = { L"ntfs", L"exfat" };
 	CHAR16 DriverPath[64], LoaderPath[64];
@@ -202,22 +205,20 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 	EFI_STATUS Status;
 	EFI_DEVICE_PATH *DevicePath, *ParentDevicePath = NULL, *BootDiskPath = NULL;
 	EFI_DEVICE_PATH *BootPartitionPath = NULL;
-	EFI_HANDLE *Handles = NULL, DriverHandle, DriverHandleList[2];
+	EFI_HANDLE *Handles = NULL, ImageHandle, DriverHandleList[2];
 	EFI_SIMPLE_FILE_SYSTEM_PROTOCOL* Volume;
 	EFI_FILE_SYSTEM_VOLUME_LABEL* VolumeInfo;
 	EFI_FILE_HANDLE Root;
 	EFI_BLOCK_IO_PROTOCOL *BlockIo;
-	CHAR8* Buffer, FsMagic[2][8] = { 
-		{ 'N', 'T', 'F', 'S', ' ', ' ', ' ', ' '} ,
-		{ 'E', 'X', 'F', 'A', 'T', ' ', ' ', ' '} };
+	CHAR8* Buffer;
 	INTN SecureBootStatus;
 	UINTN Index, FsType = 0, Try, Event, HandleCount = 0, Size;
 	BOOLEAN SameDevice;
 
 #if defined(_GNU_EFI)
-	InitializeLib(ImageHandle, SystemTable);
+	InitializeLib(BaseImageHandle, SystemTable);
 #endif
-	MainImageHandle = ImageHandle;
+	MainImageHandle = BaseImageHandle;
 
 	DisplayBanner();
 	PrintSystemInfo();
@@ -332,7 +333,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 		// Attempt to load the driver.
 		// NB: If running in a Secure Boot enabled environment, LoadImage() will fail if
 		// the image being loaded does not pass the Secure Boot signature validation.
-		Status = gBS->LoadImage(FALSE, MainImageHandle, DevicePath, NULL, 0, &DriverHandle);
+		Status = gBS->LoadImage(FALSE, MainImageHandle, DevicePath, NULL, 0, &ImageHandle);
 		SafeFree(DevicePath);
 		if (EFI_ERROR(Status)) {
 			// Some platforms (e.g. Intel NUCs) return EFI_ACCESS_DENIED for Secure Boot
@@ -346,7 +347,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 		// NB: Some HP firmwares refuse to start drivers that are not of type 'EFI Boot
 		// System Driver'. For instance, a driver of type 'EFI Runtime Driver' produces
 		// a 'Load Error' on StartImage() with these firmwares => check the type.
-		Status = gBS->OpenProtocol(DriverHandle, &gEfiLoadedImageProtocolGuid,
+		Status = gBS->OpenProtocol(ImageHandle, &gEfiLoadedImageProtocolGuid,
 			(VOID**)&LoadedImage, MainImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
 		if (EFI_ERROR(Status)) {
 			PrintError(L"  Unable to access driver interface");
@@ -359,16 +360,16 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 		}
 
 		// Load was a success - attempt to start the driver
-		Status = gBS->StartImage(DriverHandle, NULL, NULL);
+		Status = gBS->StartImage(ImageHandle, NULL, NULL);
 		if (EFI_ERROR(Status)) {
 			PrintError(L"  Unable to start driver");
 			goto out;
 		}
-		PrintInfo(L"  %s", GetDriverName(DriverHandle));
+		PrintInfo(L"  %s", GetDriverName(ImageHandle));
 
 		// Calling ConnectController() on a handle, with a NULL-terminated list of
 		// drivers will start all the drivers from the list that can service it
-		DriverHandleList[0] = DriverHandle;
+		DriverHandleList[0] = ImageHandle;
 		DriverHandleList[1] = NULL;
 		Status = gBS->ConnectController(Handles[Index], DriverHandleList, NULL, TRUE);
 		if (EFI_ERROR(Status)) {
@@ -441,7 +442,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 		PrintError(L"  Could not create path");
 		goto out;
 	}
-	Status = gBS->LoadImage(FALSE, ImageHandle, DevicePath, NULL, 0, &DriverHandle);
+	Status = gBS->LoadImage(FALSE, MainImageHandle, DevicePath, NULL, 0, &ImageHandle);
 	SafeFree(DevicePath);
 	if (EFI_ERROR(Status)) {
 		if ((Status == EFI_ACCESS_DENIED) && (SecureBootStatus >= 1))
@@ -450,7 +451,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 		goto out;
 	}
 
-	Status = gBS->StartImage(DriverHandle, NULL, NULL);
+	Status = gBS->StartImage(ImageHandle, NULL, NULL);
 	if (EFI_ERROR(Status))
 		PrintError(L"  Start failure");
 
