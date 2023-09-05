@@ -1,6 +1,8 @@
 name: CodeQL
 
 on:
+  workflow_dispatch:
+    branches: [master]
   push:
     branches: [master]
   pull_request:
@@ -20,7 +22,7 @@ jobs:
 
     steps:
     - name: Check out repository and submodules
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
         submodules: recursive
@@ -31,7 +33,7 @@ jobs:
         languages: cpp
 
     - name: Add MSBuild to PATH
-      uses: microsoft/setup-msbuild@v1
+      uses: microsoft/setup-msbuild@v1.1
 
     - name: Build UEFI bootloader
       run: msbuild ${{ env.SOLUTION_FILE_PATH }} /m /p:Configuration=${{ env.BUILD_CONFIGURATION }},Platform=${{ env.TARGET_PLATFORM }}

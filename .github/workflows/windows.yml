@@ -1,6 +1,8 @@
 name: Windows (MSVC with gnu-efi) build
 
 on:
+  workflow_dispatch:
+    branches: [master]
   push:
     branches: [master]
   pull_request:
@@ -20,13 +22,13 @@ jobs:
 
     steps:
     - name: Check out repository and submodules
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
         submodules: recursive
 
     - name: Add MSBuild to PATH
-      uses: microsoft/setup-msbuild@v1
+      uses: microsoft/setup-msbuild@v1.1
 
     - name: Build UEFI bootloader
       run: |
@@ -37,7 +39,7 @@ jobs:
       run: Get-FileHash *.efi
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: uefi-ntfs
         path: ./*.efi
