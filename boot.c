@@ -210,10 +210,14 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE BaseImageHandle, EFI_SYSTEM_TABLE *SystemT
 	EFI_FILE_SYSTEM_VOLUME_LABEL* VolumeInfo;
 	EFI_FILE_HANDLE Root;
 	EFI_BLOCK_IO_PROTOCOL *BlockIo;
+	// We'll search for "bootmgr.dll" in UEFI bootloaders to identify Windows
+	// bootloaders, but we don't want to match our own bootloader in the process.
+	// So we use a modifiable string buffer where the first character is not set.
+	CHAR8 BootMgrName[] = "_ootmgr.dll", BootMgrNameFirstLetter = 'b';
 	CHAR8* Buffer;
 	INTN SecureBootStatus;
 	UINTN Index, FsType = 0, Try, Event, HandleCount = 0, Size;
-	BOOLEAN SameDevice;
+	BOOLEAN SameDevice, WindowsBootMgr = FALSE;
 
 #if defined(_GNU_EFI)
 	InitializeLib(BaseImageHandle, SystemTable);
@@ -451,9 +455,35 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE BaseImageHandle, EFI_SYSTEM_TABLE *SystemT
 		goto out;
 	}
 
+	// Look for a "bootmgr.dll" string in the loaded image to identify a Windows bootloader.
+	BootMgrName[0] = BootMgrNameFirstLetter;
+	Status = gBS->OpenProtocol(ImageHandle, &gEfiLoadedImageProtocolGuid,
+		(VOID**)&LoadedImage, MainImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
+	if (EFI_ERROR(Status)) {
+		PrintWarning(L"  Unable to inspect loaded executable");
+	} else for (Index = 0x40; Index < LoadedImage->ImageSize - sizeof(BootMgrName); Index++) {
+		if (CompareMem((CHAR8*)((UINTN)LoadedImage->ImageBase + Index),
+			BootMgrName, sizeof(BootMgrName)) == 0) {
+			WindowsBootMgr = TRUE;
+			PrintInfo(L"Starting Microsoft Windows bootmgr...");
+			break;
+		}
+	}
+
 	Status = gBS->StartImage(ImageHandle, NULL, NULL);
-	if (EFI_ERROR(Status))
-		PrintError(L"  Start failure");
+	if (EFI_ERROR(Status)) {
+		// Windows bootmgr simply returns EFI_NO_MAPPING on any internal error or security
+		// violation, instead of halting and explicitly reporting the issue, leaving many
+		// users extremely confused as to why their media did not boot. This can happen, for
+		// instance, if the machine has had the BlackLotus UEFI lock enabled and the user
+		// attempts to boot a pre 2023.05 version of the Windows installers.
+		// We therefore take it upon ourselves to report what Windows bootmgr will not report.
+		if (Status == EFI_NO_MAPPING && WindowsBootMgr) {
+			SetText(TEXT_RED); Print(L"[FAIL]"); DefText();
+			Print(L"   Windows bootmgr encountered a security validation or internal error\n");
+		} else
+			PrintError(L"  Start failure");
+	}
 
 out:
 	SafeFree(ParentDevicePath);
