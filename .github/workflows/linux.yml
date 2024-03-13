@@ -56,11 +56,7 @@ jobs:
         echo '#define VERSION_STRING L"${{steps.set_version.outputs.version}}"' > version.h
 
     - name: Set up Linux environment
-      run: sudo apt install -y ${{matrix.TARGET_PKGS}}
-
-    - name: Fix missing Risc-V header
-      if: matrix.TARGET_TYPE == 'riscv64'
-      run: sudo ln -s /usr/riscv64-linux-gnu/include/gnu/stubs-lp64d.h /usr/riscv64-linux-gnu/include/gnu/stubs-lp64.h
+      run: sudo apt-get update && sudo apt-get -y --no-install-recommends install ${{matrix.TARGET_PKGS}}
 
     - name: Set up EDK2
       run: |
@@ -79,14 +75,15 @@ jobs:
       run: sha256sum *.efi
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: uefi-ntfs
+        name: ${{matrix.TARGET_TYPE}}
         path: ./*.efi
 
     - name: Create release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       if: startsWith(github.ref, 'refs/tags/')
       with:
         token: ${{secrets.GITHUB_TOKEN}}
+        body: "**UEFI:NTFS ${{ steps.set_version.outputs.version }}**"
         files: ./*.efi

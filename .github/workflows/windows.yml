@@ -28,7 +28,7 @@ jobs:
         submodules: recursive
 
     - name: Add MSBuild to PATH
-      uses: microsoft/setup-msbuild@v1.1
+      uses: microsoft/setup-msbuild@v2
 
     - name: Build UEFI bootloader
       run: |
@@ -39,7 +39,7 @@ jobs:
       run: Get-FileHash *.efi
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: uefi-ntfs
+        name: ${{ matrix.TARGET_PLATFORM }}
         path: ./*.efi
