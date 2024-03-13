@@ -1,6 +1,6 @@
 /*
  * uefi-ntfs: UEFI → NTFS/exFAT chain loader
- * Copyright © 2014-2021 Pete Batard <pete@akeo.ie>
+ * Copyright © 2014-2024 Pete Batard <pete@akeo.ie>
  * With parts from rEFInd © 2012-2016 Roderick W. Smith
  *
  * This program is free software: you can redistribute it and/or modify
@@ -55,13 +55,13 @@ static CHAR16* GetDriverName(CONST EFI_HANDLE DriverHandle)
 	// Try EFI_COMPONENT_NAME2 protocol first
 	if ( (gBS->OpenProtocol(DriverHandle, &gEfiComponentName2ProtocolGuid, (VOID**)&ComponentName2,
 			MainImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL) == EFI_SUCCESS) &&
-		 (ComponentName2->GetDriverName(ComponentName2, (CHAR8*)"", &DriverName) == EFI_SUCCESS) )
+		 (ComponentName2->GetDriverName(ComponentName2, ComponentName2->SupportedLanguages, &DriverName) == EFI_SUCCESS))
 		return DriverName;
 
 	// Fallback to EFI_COMPONENT_NAME if that didn't work
 	if ( (gBS->OpenProtocol(DriverHandle, &gEfiComponentNameProtocolGuid, (VOID**)&ComponentName,
 			MainImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL) == EFI_SUCCESS) &&
-		 (ComponentName->GetDriverName(ComponentName, (CHAR8*)"", &DriverName) == EFI_SUCCESS) )
+		 (ComponentName->GetDriverName(ComponentName, ComponentName->SupportedLanguages, &DriverName) == EFI_SUCCESS))
 		return DriverName;
 
 	return L"(unknown driver)";
@@ -140,6 +140,39 @@ static VOID DisconnectBlockingDrivers(VOID) {
 		FreePool(OpenInfo);
 	}
 	FreePool(Handles);
+}
+
+/*
+ * Unload an existing file system driver.
+ */
+EFI_STATUS UnloadDriver(
+	CONST EFI_HANDLE FileSystemHandle
+)
+{
+	EFI_STATUS Status;
+	UINTN OpenInfoCount;
+	EFI_OPEN_PROTOCOL_INFORMATION_ENTRY* OpenInfo;
+	EFI_DRIVER_BINDING_PROTOCOL* DriverBinding;
+	CHAR16* DriverName;
+
+	// Open the disk instance associated with the filesystem handle (there should be only one)
+	Status = gBS->OpenProtocolInformation(FileSystemHandle, &gEfiDiskIoProtocolGuid, &OpenInfo, &OpenInfoCount);
+	if (EFI_ERROR(Status) || (OpenInfoCount != 1))
+		return EFI_NOT_FOUND;
+
+	// Obtain the info of the driver servicing this specific disk instance
+	Status = gBS->OpenProtocol(OpenInfo[0].AgentHandle, &gEfiDriverBindingProtocolGuid, (VOID**)&DriverBinding,
+			MainImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
+	if (EFI_ERROR(Status))
+		return Status;
+
+	// Display the driver name and version, then unload it using its image handle
+	DriverName = GetDriverName(OpenInfo[0].AgentHandle);
+	PrintWarning(L"Unloading existing '%s v0x%x'", DriverName, DriverBinding->Version);
+	Status = gBS->UnloadImage(DriverBinding->ImageHandle);
+	if (EFI_ERROR(Status))
+		PrintWarning(L"  Could not unload driver: %r", Status);
+	return Status;
 }
 
 /*
@@ -313,16 +346,29 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE BaseImageHandle, EFI_SYSTEM_TABLE *SystemT
 	PrintInfo(L"  %s", DevicePathString);
 	SafeFree(DevicePathString);
 
-	PrintInfo(L"Checking if target partition needs the %s service", FsName[FsType]);
 	// Test for presence of file system protocol (to see if there already is
 	// a filesystem driver servicing this partition)
 	Status = gBS->OpenProtocol(Handles[Index], &gEfiSimpleFileSystemProtocolGuid,
 		(VOID**)&Volume, MainImageHandle, NULL, EFI_OPEN_PROTOCOL_TEST_PROTOCOL);
+
+	// Only handle partitions that are flagged as serviced or needing service
+	if (Status != EFI_SUCCESS && Status != EFI_UNSUPPORTED) {
+		PrintError(L"Could not check for %s service", FsName[FsType]);
+		goto out;
+	}
+
+	// Because of the AMI NTFS driver bug (https://github.com/pbatard/AmiNtfsBug) as
+	// well as reports of issues when using an NTFS driver different from ours, we
+	// unconditionally try to unload any native file system driver that is servicing
+	// our target partition.
 	if (Status == EFI_SUCCESS) {
-		// A filesystem driver is already set => no need to start ours
-		PrintWarning(L"  An %s driver service is already loaded", FsName[FsType]);
-	} else if (Status == EFI_UNSUPPORTED) {
-		// Partition is not being serviced by a file system driver yet => start ours
+		// Unload the driver and, if successful, flag the partition as needing service
+		if (UnloadDriver(Handles[Index]) == EFI_SUCCESS)
+			Status = EFI_UNSUPPORTED;
+	}
+
+	// If the partition is not/no-longer serviced, start our file system driver.
+	if (Status == EFI_UNSUPPORTED) {
 		PrintInfo(L"Starting %s driver service:", FsName[FsType]);
 
 		// Use 'rufus' in the driver path, so that we don't accidentally latch onto a user driver
@@ -380,9 +426,6 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE BaseImageHandle, EFI_SYSTEM_TABLE *SystemT
 			PrintError(L"  Could not start %s partition service", FsName[FsType]);
 			goto out;
 		}
-	} else {
-		PrintError(L"  Could not check for %s service", FsName[FsType]);
-		goto out;
 	}
 
 	// Our target file system is case sensitive, so we need to figure out the
