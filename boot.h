@@ -23,12 +23,6 @@
 #include <efistdarg.h>
 #include <libsmbios.h>
 
-#define gEfiSmbios3TableGuid SMBIOS3TableGuid
-#define gEfiSmbiosTableGuid SMBIOSTableGuid
-#define SMBIOS_STRUCTURE SMBIOS_HEADER
-#define SMBIOS_TABLE_ENTRY_POINT SMBIOS_STRUCTURE_TABLE
-#define SMBIOS_TABLE_3_0_ENTRY_POINT SMBIOS3_STRUCTURE_TABLE
-
 #else /* EDK2 */
 
 #include <Base.h>
