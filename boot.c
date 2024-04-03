@@ -150,29 +150,37 @@ EFI_STATUS UnloadDriver(
 )
 {
 	EFI_STATUS Status;
-	UINTN OpenInfoCount;
+	UINTN OpenInfoCount, i;
 	EFI_OPEN_PROTOCOL_INFORMATION_ENTRY* OpenInfo;
 	EFI_DRIVER_BINDING_PROTOCOL* DriverBinding;
 	CHAR16* DriverName;
 
-	// Open the disk instance associated with the filesystem handle (there should be only one)
+	// Open the disk instance associated with the filesystem handle
 	Status = gBS->OpenProtocolInformation(FileSystemHandle, &gEfiDiskIoProtocolGuid, &OpenInfo, &OpenInfoCount);
-	if (EFI_ERROR(Status) || (OpenInfoCount != 1))
+	if (EFI_ERROR(Status))
 		return EFI_NOT_FOUND;
 
-	// Obtain the info of the driver servicing this specific disk instance
-	Status = gBS->OpenProtocol(OpenInfo[0].AgentHandle, &gEfiDriverBindingProtocolGuid, (VOID**)&DriverBinding,
-			MainImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
-	if (EFI_ERROR(Status))
-		return Status;
+	// There may be multiple disk instances, including "phantom" ones (without a
+	// bound driver) so try to process them all until we manage to unload a driver.
+	for (i = 0; i < OpenInfoCount; i++) {
+		// Obtain the info of the driver servicing this specific disk instance
+		Status = gBS->OpenProtocol(OpenInfo[i].AgentHandle, &gEfiDriverBindingProtocolGuid,
+			(VOID**)&DriverBinding, MainImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
+		if (EFI_ERROR(Status))
+			continue;
 
-	// Display the driver name and version, then unload it using its image handle
-	DriverName = GetDriverName(OpenInfo[0].AgentHandle);
-	PrintWarning(L"Unloading existing '%s v0x%x'", DriverName, DriverBinding->Version);
-	Status = gBS->UnloadImage(DriverBinding->ImageHandle);
-	if (EFI_ERROR(Status))
-		PrintWarning(L"  Could not unload driver: %r", Status);
-	return Status;
+		// Display the driver name and version, then unload it using its image handle
+		DriverName = GetDriverName(OpenInfo[i].AgentHandle);
+		PrintWarning(L"Unloading existing '%s v0x%x'", DriverName, DriverBinding->Version);
+		Status = gBS->UnloadImage(DriverBinding->ImageHandle);
+		if (EFI_ERROR(Status)) {
+			PrintWarning(L"  Could not unload driver: %r", Status);
+			continue;
+		}
+		return EFI_SUCCESS;
+	}
+
+	return EFI_NOT_FOUND;
 }
 
 /*
