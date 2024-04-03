@@ -142,6 +142,9 @@ EFI_STATUS SetPathCase(CONST EFI_FILE_HANDLE Root, CHAR16* Path)
 	if (EFI_ERROR(Status))
 		goto out;
 
+	// Make sure we always start at the top of the directory list
+	FileHandle->SetPosition(FileHandle, 0);
+
 	do {
 		Size = FileInfoSize;
 		ZeroMem(FileInfo, Size);
