@@ -106,8 +106,8 @@ ifeq (, $(shell which $(CC)))
   $(error The selected compiler ($(CC)) was not found)
 endif
 
-GCCVERSION     := $(shell $(CC) -dumpversion | cut -f1 -d.)
-GCCMINOR       := $(shell $(CC) -dumpversion | cut -f2 -d.)
+GCCVERSION     := $(shell $(CC) -dumpversion | sed -e 's/-win32/.0/' | cut -f1 -d.)
+GCCMINOR       := $(shell $(CC) -dumpversion | sed -e 's/-win32/.0/' | cut -f2 -d.)
 GCCMACHINE     := $(shell $(CC) -dumpmachine)
 GCCNEWENOUGH   := $(shell ( [ $(GCCVERSION) -gt "4" ]        \
                           || ( [ $(GCCVERSION) -eq "4" ]     \
