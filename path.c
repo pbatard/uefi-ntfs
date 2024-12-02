@@ -212,6 +212,9 @@ CHAR16* DevicePathToString(CONST EFI_DEVICE_PATH* DevicePath)
 	EFI_STATUS Status;
 	EFI_DEVICE_PATH_TO_TEXT_PROTOCOL* DevicePathToText;
 
+	if (DevicePath == NULL)
+		return NULL;
+
 	/* On most platforms, the DevicePathToText protocol should be available */
 	Status = gBS->LocateProtocol(&gEfiDevicePathToTextProtocolGuid, NULL, (VOID**)&DevicePathToText);
 	if (Status == EFI_SUCCESS)

@@ -41,6 +41,9 @@ static EFI_HANDLE MainImageHandle = NULL;
 #elif defined(_M_RISCV64) || (defined (__riscv) && (__riscv_xlen == 64))
   static CHAR16* Arch = L"riscv64";
   static CHAR16* ArchName = L"64-bit RISC-V";
+#elif  defined(_M_LOONGARCH64) || defined(__loongarch64)
+static CHAR16* Arch = L"loongarch64";
+static CHAR16* ArchName = L"64-bit LoongArch";
 #else
 #  error Unsupported architecture
 #endif
@@ -244,9 +247,9 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE BaseImageHandle, EFI_SYSTEM_TABLE *SystemT
 	CHAR16* DevicePathString;
 	EFI_LOADED_IMAGE_PROTOCOL *LoadedImage;
 	EFI_STATUS Status;
-	EFI_DEVICE_PATH *DevicePath, *ParentDevicePath = NULL, *BootDiskPath = NULL;
+	EFI_DEVICE_PATH *DevicePath = NULL, *ParentDevicePath = NULL, *BootDiskPath = NULL;
 	EFI_DEVICE_PATH *BootPartitionPath = NULL;
-	EFI_HANDLE *Handles = NULL, ImageHandle, DriverHandleList[2];
+	EFI_HANDLE* Handles = NULL, ImageHandle, DriverHandleList[2] = { 0 };
 	EFI_SIMPLE_FILE_SYSTEM_PROTOCOL* Volume;
 	EFI_FILE_SYSTEM_VOLUME_LABEL* VolumeInfo;
 	EFI_FILE_HANDLE Root;

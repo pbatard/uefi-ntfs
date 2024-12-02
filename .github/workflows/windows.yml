@@ -13,12 +13,12 @@ env:
   BUILD_CONFIGURATION: Release
 
 jobs:
-  Windows-VS2019-Build:
+  build:
     runs-on: windows-latest
 
     strategy:
       matrix:
-        TARGET_PLATFORM: [x64, ia32, aa64, arm]
+        arch: [x64, ia32, aa64]
 
     steps:
     - name: Check out repository and submodules
@@ -32,8 +32,8 @@ jobs:
 
     - name: Build UEFI bootloader
       run: |
-        msbuild ${{ env.SOLUTION_FILE_PATH }} /m /p:Configuration=${{ env.BUILD_CONFIGURATION }},Platform=${{ matrix.TARGET_PLATFORM }}
-        copy ${{ matrix.TARGET_PLATFORM }}\${{ env.BUILD_CONFIGURATION }}\*.efi .
+        msbuild ${{ env.SOLUTION_FILE_PATH }} /m /p:Configuration=${{ env.BUILD_CONFIGURATION }},Platform=${{ matrix.arch }}
+        copy ${{ matrix.arch }}\${{ env.BUILD_CONFIGURATION }}\*.efi .
 
     - name: Display SHA-256
       run: Get-FileHash *.efi
@@ -41,5 +41,5 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ matrix.TARGET_PLATFORM }}
+        name: ${{ matrix.arch }}
         path: ./*.efi

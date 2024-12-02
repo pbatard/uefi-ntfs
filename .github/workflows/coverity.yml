@@ -13,7 +13,7 @@ env:
   EMAIL: pete@akeo.ie
 
 jobs:
-  Coverity-Build:
+  build:
     runs-on: windows-latest
 
     steps:
@@ -45,4 +45,4 @@ jobs:
     - name: Upload Coverity build for analysis
       run: |
         7z a -r cov-int.zip cov-int
-        curl --form email=${{env.EMAIL}} --form token=${{secrets.COVERITY_SCAN_TOKEN}} --form file=@cov-int.zip --form version="${{env.GITHUB_SHA}}" --form description="uefi-ntfs" https://scan.coverity.com/builds?project=pbatard%2Fuefi-ntfs
+        curl --form email=${{ env.EMAIL }} --form token=${{ secrets.COVERITY_SCAN_TOKEN }} --form file=@cov-int.zip --form version="${{ env.GITHUB_SHA }}" --form description="uefi-ntfs" https://scan.coverity.com/builds?project=pbatard%2Fuefi-ntfs

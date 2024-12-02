@@ -15,29 +15,36 @@ env:
   GCC5_ARM_PREFIX: arm-linux-gnueabi-
   GCC5_AARCH64_PREFIX: aarch64-linux-gnu-
   GCC5_RISCV64_PREFIX: riscv64-linux-gnu-
+  GCC5_LOONGARCH64_PREFIX: loongarch64-unknown-linux-gnu-
+  LOONGARCH64_TOOLCHAIN_TAG: 2024.11.01
+  LOONGARCH64_TOOLCHAIN_NAME: x86_64-cross-tools-loongarch64-binutils_2.43.1-gcc_14.2.0-glibc_2.40.tar.xz
 
 jobs:
-  Linux-EDK2-Build:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: ubuntu-24.04
 
     strategy:
       matrix:
+        arch: [X64, IA32, AARCH64, ARM, RISCV64, LOONGARCH64]
         include:
-        - TARGET_TYPE: x64
-          TARGET_ARCH: X64
-          TARGET_PKGS: python3-distutils nasm uuid-dev
-        - TARGET_TYPE: ia32
-          TARGET_ARCH: IA32
-          TARGET_PKGS: gcc-multilib python3-distutils nasm uuid-dev
-        - TARGET_TYPE: aa64
-          TARGET_ARCH: AARCH64
-          TARGET_PKGS: gcc-aarch64-linux-gnu python3-distutils uuid-dev
-        - TARGET_TYPE: arm
-          TARGET_ARCH: ARM
-          TARGET_PKGS: gcc-arm-linux-gnueabi python3-distutils uuid-dev
-        - TARGET_TYPE: riscv64
-          TARGET_ARCH: RISCV64
-          TARGET_PKGS: gcc-riscv64-linux-gnu python3-distutils uuid-dev
+        - arch: X64
+          short: x64
+          pkgs: nasm python3-setuptools uuid-dev
+        - arch: IA32
+          short: ia32
+          pkgs: gcc-multilib nasm python3-setuptools uuid-dev
+        - arch: AARCH64
+          short: aa64
+          pkgs: gcc-aarch64-linux-gnu python3-setuptools uuid-dev
+        - arch: ARM
+          short: arm
+          pkgs: gcc-arm-linux-gnueabi python3-setuptools uuid-dev
+        - arch: RISCV64
+          short: riscv64
+          pkgs: gcc-riscv64-linux-gnu python3-setuptools uuid-dev
+        - arch: LOONGARCH64
+          short: loongarch64
+          pkgs: gcc-multilib python3-setuptools uuid-dev
 
     steps:
     - name: Check out repository
@@ -47,16 +54,22 @@ jobs:
 
     - name: Set version
       id: set_version
-      # NB: The following only works if the shell is bash
       run: echo "version=$(git describe --tags)" >> $GITHUB_OUTPUT
 
     - name: Create version.h file
       run: |
         git update-index --skip-worktree version.h
-        echo '#define VERSION_STRING L"${{steps.set_version.outputs.version}}"' > version.h
+        echo '#define VERSION_STRING L"${{ steps.set_version.outputs.version }}"' > version.h
 
-    - name: Set up Linux environment
-      run: sudo apt-get update && sudo apt-get -y --no-install-recommends install ${{matrix.TARGET_PKGS}}
+    - name: Install toolchain
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends ${{ matrix.pkgs }}
+        if [[ "${{ matrix.arch }}" == "LOONGARCH64" ]]; then
+          curl -L -O https://github.com/loongson/build-tools/releases/download/${LOONGARCH64_TOOLCHAIN_TAG}/${LOONGARCH64_TOOLCHAIN_NAME}
+          tar -xJf ${LOONGARCH64_TOOLCHAIN_NAME}
+          echo "$PWD/cross-tools/bin" >> "$GITHUB_PATH"
+        fi
 
     - name: Set up EDK2
       run: |
@@ -68,8 +81,8 @@ jobs:
         export WORKSPACE=$PWD
         export PACKAGES_PATH=$WORKSPACE:$WORKSPACE/edk2
         source edk2/edksetup.sh
-        build -a ${{matrix.TARGET_ARCH}} -b ${BUILD_TYPE} -t GCC5 -p uefi-ntfs.dsc
-        mv $WORKSPACE/Build/${BUILD_TYPE}_GCC5/${{matrix.TARGET_ARCH}}/uefi-ntfs.efi $WORKSPACE/boot${{matrix.TARGET_TYPE}}.efi
+        build -a ${{ matrix.arch }} -b ${BUILD_TYPE} -t GCC5 -p uefi-ntfs.dsc
+        mv $WORKSPACE/Build/${BUILD_TYPE}_GCC5/${{ matrix.arch }}/uefi-ntfs.efi $WORKSPACE/boot${{ matrix.short }}.efi
 
     - name: Display SHA-256
       run: sha256sum *.efi
@@ -77,13 +90,13 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: ${{matrix.TARGET_TYPE}}
+        name: ${{ matrix.short }}
         path: ./*.efi
 
     - name: Create release
       uses: softprops/action-gh-release@v2
       if: startsWith(github.ref, 'refs/tags/')
       with:
-        token: ${{secrets.GITHUB_TOKEN}}
+        token: ${{ secrets.GITHUB_TOKEN }}
         body: "**UEFI:NTFS ${{ steps.set_version.outputs.version }}**"
         files: ./*.efi

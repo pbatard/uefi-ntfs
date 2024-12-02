@@ -14,7 +14,7 @@ env:
   TARGET_PLATFORM: x64
 
 jobs:
-  CodeQL-Build:
+  build:
     runs-on: windows-latest
 
     permissions:
