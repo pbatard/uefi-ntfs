@@ -117,17 +117,6 @@
 #define V_ASSERT(a)         P_ASSERT(__FILE__, __LINE__, a)
 
 /*
- * EDK2 and gnu-efi's CompareGuid() return opposite values for a match!
- * EDK2 returns boolean TRUE, whereas gnu-efi returns INTN 0, so we
- * define a common boolean macro that follows EDK2 convention always.
- */
-#if defined(_GNU_EFI)
-#define COMPARE_GUID(a, b) (CompareGuid(a, b) == 0)
-#else
-#define COMPARE_GUID CompareGuid
-#endif
-
-/*
  * Secure string length, that asserts if the string is NULL or if
  * the length is larger than a predetermined value (STRING_MAX)
  */
