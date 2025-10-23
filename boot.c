@@ -25,25 +25,32 @@
 /* Global handle for the current executable */
 STATIC EFI_HANDLE MainImageHandle = NULL;
 
-/* Strings used to identify the plaform */
+/* Arch shorthands */
+STATIC CONST struct {
+	CONST CHAR16* EfiSuffix;
+	CONST CHAR16* CpuType;
+	CONST CHAR16* Description;
+} Arch[] = {
+	{ L"x64", L"64-bit x86", L"an x64" },
+	{ L"ia32", L"32-bit x86", L"an x86" },
+	{ L"arm", L"32-bit ARM", L"an ARM" },
+	{ L"aa64", L"64-bit ARM", L"an ARM64" },
+	{ L"risvc64", L"64-bit RISC-V", L"a RiscV64" },
+	{ L"loongarch64", L"64-bit LoongArch", L"a Loong64" },
+};
+
 #if defined(_M_X64) || defined(__x86_64__)
-  STATIC CHAR16* Arch = L"x64";
-  STATIC CHAR16* ArchName = L"64-bit x86";
+  #define ArchIndex 0
 #elif defined(_M_IX86) || defined(__i386__)
-  STATIC CHAR16* Arch = L"ia32";
-  STATIC CHAR16* ArchName = L"32-bit x86";
+  #define ArchIndex 1
 #elif defined (_M_ARM64) || defined(__aarch64__)
-  STATIC CHAR16* Arch = L"aa64";
-  STATIC CHAR16* ArchName = L"64-bit ARM";
+  #define ArchIndex 2
 #elif defined (_M_ARM) || defined(__arm__)
-  STATIC CHAR16* Arch = L"arm";
-  STATIC CHAR16* ArchName = L"32-bit ARM";
+  #define ArchIndex 3
 #elif defined(_M_RISCV64) || (defined (__riscv) && (__riscv_xlen == 64))
-  STATIC CHAR16* Arch = L"riscv64";
-  STATIC CHAR16* ArchName = L"64-bit RISC-V";
+  #define ArchIndex 4
 #elif  defined(_M_LOONGARCH64) || defined(__loongarch64)
-static CHAR16* Arch = L"loongarch64";
-static CHAR16* ArchName = L"64-bit LoongArch";
+  #define ArchIndex 5
 #else
 #  error Unsupported architecture
 #endif
@@ -203,7 +210,7 @@ STATIC VOID DisplayBanner(VOID)
 		Print(L"%c", BOXDRAW_HORIZONTAL);
 	Print(L"%c\n", BOXDRAW_DOWN_LEFT);
 
-	UnicodeSPrint(String, ARRAY_SIZE(String), L"UEFI:NTFS %s (%s)", VERSION_STRING, Arch);
+	UnicodeSPrint(String, ARRAY_SIZE(String), L"UEFI:NTFS %s (%s)", VERSION_STRING, Arch[ArchIndex].EfiSuffix);
 	Len = SafeStrLen(String);
 	V_ASSERT(Len < BANNER_LINE_SIZE);
 	Print(L"%c", BOXDRAW_VERTICAL);
@@ -243,7 +250,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE BaseImageHandle, EFI_SYSTEM_TABLE *SystemT
 		{ 'E', 'X', 'F', 'A', 'T', ' ', ' ', ' '} };
 	CONST CHAR16* FsName[] = { L"NTFS", L"exFAT" };
 	CONST CHAR16* DriverName[] = { L"ntfs", L"exfat" };
-	CHAR16 DriverPath[64], LoaderPath[64];
+	CHAR16 DriverPath[64], LoaderPath[64], LoaderPath2[64];
 	CHAR16* DevicePathString;
 	EFI_LOADED_IMAGE_PROTOCOL *LoadedImage;
 	EFI_STATUS Status;
@@ -383,7 +390,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE BaseImageHandle, EFI_SYSTEM_TABLE *SystemT
 		PrintInfo(L"Starting %s driver service:", FsName[FsType]);
 
 		// Use 'rufus' in the driver path, so that we don't accidentally latch onto a user driver
-		UnicodeSPrint(DriverPath, ARRAY_SIZE(DriverPath), L"\\efi\\rufus\\%s_%s.efi", DriverName[FsType], Arch);
+		UnicodeSPrint(DriverPath, ARRAY_SIZE(DriverPath), L"\\efi\\rufus\\%s_%s.efi", DriverName[FsType], Arch[ArchIndex].EfiSuffix);
 		DevicePath = FileDevicePath(LoadedImage->DeviceHandle, DriverPath);
 		if (DevicePath == NULL) {
 			Status = EFI_DEVICE_ERROR;
@@ -441,7 +448,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE BaseImageHandle, EFI_SYSTEM_TABLE *SystemT
 
 	// Our target file system is case sensitive, so we need to figure out the
 	// case sensitive version of the following
-	UnicodeSPrint(LoaderPath, ARRAY_SIZE(LoaderPath), L"\\efi\\boot\\boot%s.efi", Arch);
+	UnicodeSPrint(LoaderPath, ARRAY_SIZE(LoaderPath), L"\\efi\\boot\\boot%s.efi", Arch[ArchIndex].EfiSuffix);
 
 	PrintInfo(L"Opening target %s partition:", FsName[FsType]);
 	// Open the the volume, with retry, as we may need to wait before poking
@@ -482,9 +489,24 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE BaseImageHandle, EFI_SYSTEM_TABLE *SystemT
 		FreePool(VolumeInfo);
 	}
 
-	PrintInfo(L"This system uses %s UEFI => searching for %s EFI bootloader", ArchName, Arch);
+	PrintInfo(L"This system uses %s UEFI => searching for %s UEFI bootloader", Arch[ArchIndex].CpuType, Arch[ArchIndex].EfiSuffix);
 	// This next call corrects the casing to the required one
 	Status = SetPathCase(Root, LoaderPath);
+	if (Status == EFI_NOT_FOUND) {
+		// Some people mix their source images (e.g. downloaded Windows ARM64 when they
+		// really needed x64), so try to provide a more helpful error message then.
+		for (Index = 0; Index < ARRAY_SIZE(Arch); Index++) {
+			if (Index == ArchIndex)
+				continue;
+			UnicodeSPrint(LoaderPath2, ARRAY_SIZE(LoaderPath2), L"\\efi\\boot\\boot%s.efi", Arch[Index].EfiSuffix);
+			if (SetPathCase(Root, LoaderPath2) == EFI_SUCCESS) {
+				PrintWarning(L"Found incompatible %s UEFI bootloader instead", Arch[Index].EfiSuffix);
+				PrintError(L"You are trying to boot %s image on %s UEFI platform!", Arch[Index].Description, Arch[ArchIndex].Description);
+				PrintError(L"Please download %s compatible image and recreate the media", Arch[ArchIndex].Description);
+				goto out;
+			}
+		}
+	}
 	if (EFI_ERROR(Status)) {
 		PrintErrorStatus(L"  Could not locate '%s'", &LoaderPath[1]);
 		goto out;
