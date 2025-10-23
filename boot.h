@@ -1,6 +1,6 @@
 /*
  * uefi-ntfs: UEFI → NTFS/exFAT chain loader
- * Copyright © 2014-2021 Pete Batard <pete@akeo.ie>
+ * Copyright © 2014-2025 Pete Batard <pete@akeo.ie>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -105,12 +105,14 @@
 /*
  * Convenience macros to print informational, warning or error messages.
  */
-#define PrintInfo(fmt, ...)  do { SetText(TEXT_WHITE); Print(L"[INFO]"); DefText(); \
-                                     Print(L" " fmt L"\n", ##__VA_ARGS__); } while(0)
-#define PrintWarning(fmt, ...)  do { SetText(TEXT_YELLOW); Print(L"[WARN]"); DefText(); \
-                                     Print(L" " fmt L"\n", ##__VA_ARGS__); } while(0)
-#define PrintError(fmt, ...)    do { SetText(TEXT_RED); Print(L"[FAIL]"); DefText(); \
-                                     Print(L" " fmt L": [%d] %r\n", ##__VA_ARGS__, (Status&0x7FFFFFFF), Status); } while (0)
+#define PrintInfo(fmt, ...)         do { SetText(TEXT_WHITE); Print(L"[INFO]"); DefText(); \
+                                         Print(L" " fmt L"\n", ##__VA_ARGS__); } while(0)
+#define PrintWarning(fmt, ...)      do { SetText(TEXT_YELLOW); Print(L"[WARN]"); DefText(); \
+                                         Print(L" " fmt L"\n", ##__VA_ARGS__); } while(0)
+#define PrintError(fmt, ...)        do { SetText(TEXT_RED); Print(L"[FAIL]"); DefText(); \
+                                         Print(L" " fmt L"\n", ##__VA_ARGS__); } while(0)
+#define PrintErrorStatus(fmt, ...)  do { SetText(TEXT_RED); Print(L"[FAIL]"); DefText(); \
+                                         Print(L" " fmt L": [%d] %r\n", ##__VA_ARGS__, (Status&0x7FFFFFFF), Status); } while (0)
 
 /* Convenience assertion macro */
 #define P_ASSERT(f, l, a)   if(!(a)) do { Print(L"*** ASSERT FAILED: %a(%d): %a ***\n", f, l, #a); while(1); } while(0)
@@ -120,7 +122,7 @@
  * Secure string length, that asserts if the string is NULL or if
  * the length is larger than a predetermined value (STRING_MAX)
  */
-static __inline UINTN _SafeStrLen(CONST CHAR16* String, CONST CHAR8* File, CONST UINTN Line) {
+STATIC __inline UINTN _SafeStrLen(CONST CHAR16* String, CONST CHAR8* File, CONST UINTN Line) {
 	UINTN Len = 0;
 	P_ASSERT(File, Line, String != NULL);
 	Len = StrLen(String);
@@ -134,14 +136,14 @@ static __inline UINTN _SafeStrLen(CONST CHAR16* String, CONST CHAR8* File, CONST
  * Some UEFI firmwares have a *BROKEN* Unicode collation implementation
  * so we must provide our own version of StriCmp for ASCII comparison...
  */
-static __inline CHAR16 _tolower(CONST CHAR16 c)
+STATIC __inline CHAR16 _tolower(CONST CHAR16 c)
 {
 	if (('A' <= c) && (c <= 'Z'))
 		return 'a' + (c - 'A');
 	return c;
 }
 
-static __inline INTN _StriCmp(CONST CHAR16* s1, CONST CHAR16* s2)
+STATIC __inline INTN _StriCmp(CONST CHAR16* s1, CONST CHAR16* s2)
 {
 	/* NB: SafeStrLen() will already have asserted if these condition are met */
 	if ((SafeStrLen(s1) >= STRING_MAX) || (SafeStrLen(s2) >= STRING_MAX))
@@ -155,7 +157,7 @@ static __inline INTN _StriCmp(CONST CHAR16* s1, CONST CHAR16* s2)
  * Secure string copy, that either uses the already secure version from
  * EDK2, or duplicates it for gnu-efi and asserts on any error.
  */
-static __inline VOID _SafeStrCpy(CHAR16* Destination, UINTN DestMax,
+STATIC __inline VOID _SafeStrCpy(CHAR16* Destination, UINTN DestMax,
 	CONST CHAR16* Source, CONST CHAR8* File, CONST UINTN Line) {
 #ifdef _GNU_EFI
 	P_ASSERT(File, Line, Destination != NULL);

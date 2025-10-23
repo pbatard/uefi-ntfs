@@ -1,6 +1,6 @@
 /*
  * uefi-ntfs: UEFI → NTFS/exFAT chain loader - System Information
- * Copyright © 2014-2021 Pete Batard <pete@akeo.ie>
+ * Copyright © 2014-2025 Pete Batard <pete@akeo.ie>
  * With parts from EDK © 1998  Intel Corporation
  *
  * This program is free software: you can redistribute it and/or modify
@@ -22,7 +22,7 @@
 /*
  * Read a system configuration table from a TableGuid.
  */
-static EFI_STATUS GetSystemConfigurationTable(EFI_GUID* TableGuid, VOID** Table)
+STATIC EFI_STATUS GetSystemConfigurationTable(EFI_GUID* TableGuid, VOID** Table)
 {
 	UINTN Index;
 	V_ASSERT(Table != NULL);
@@ -45,7 +45,7 @@ static EFI_STATUS GetSystemConfigurationTable(EFI_GUID* TableGuid, VOID** Table)
  * Returns:
  *  Pointer to string, or pointer to next SMBIOS structure if StringNumber == 0xFFFF.
  */
-static CHAR8* GetSmbiosString(SMBIOS_STRUCTURE_POINTER* Smbios, UINT16 StringNumber)
+STATIC CHAR8* GetSmbiosString(SMBIOS_STRUCTURE_POINTER* Smbios, UINT16 StringNumber)
 {
 	UINT16 Index;
 	CHAR8* String;

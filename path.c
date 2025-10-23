@@ -1,6 +1,6 @@
 /*
  * uefi-ntfs: UEFI → NTFS/exFAT chain loader - Path related functions
- * Copyright © 2014-2021 Pete Batard <pete@akeo.ie>
+ * Copyright © 2014-2025 Pete Batard <pete@akeo.ie>
  * With parts from GRUB © 2006 Free Software Foundation, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,7 +20,7 @@
 #include "boot.h"
 
 /* Return the device path node right before the end node */
-static EFI_DEVICE_PATH* GetLastDevicePath(CONST EFI_DEVICE_PATH_PROTOCOL* dp)
+STATIC EFI_DEVICE_PATH* GetLastDevicePath(CONST EFI_DEVICE_PATH_PROTOCOL* dp)
 {
 	EFI_DEVICE_PATH *next, *p;
 

@@ -1,6 +1,6 @@
 /*
  * uefi-ntfs: UEFI → NTFS/exFAT chain loader
- * Copyright © 2014-2024 Pete Batard <pete@akeo.ie>
+ * Copyright © 2014-2025 Pete Batard <pete@akeo.ie>
  * With parts from rEFInd © 2012-2016 Roderick W. Smith
  *
  * This program is free software: you can redistribute it and/or modify
@@ -23,24 +23,24 @@
 #include "version.h"
 
 /* Global handle for the current executable */
-static EFI_HANDLE MainImageHandle = NULL;
+STATIC EFI_HANDLE MainImageHandle = NULL;
 
 /* Strings used to identify the plaform */
 #if defined(_M_X64) || defined(__x86_64__)
-  static CHAR16* Arch = L"x64";
-  static CHAR16* ArchName = L"64-bit x86";
+  STATIC CHAR16* Arch = L"x64";
+  STATIC CHAR16* ArchName = L"64-bit x86";
 #elif defined(_M_IX86) || defined(__i386__)
-  static CHAR16* Arch = L"ia32";
-  static CHAR16* ArchName = L"32-bit x86";
+  STATIC CHAR16* Arch = L"ia32";
+  STATIC CHAR16* ArchName = L"32-bit x86";
 #elif defined (_M_ARM64) || defined(__aarch64__)
-  static CHAR16* Arch = L"aa64";
-  static CHAR16* ArchName = L"64-bit ARM";
+  STATIC CHAR16* Arch = L"aa64";
+  STATIC CHAR16* ArchName = L"64-bit ARM";
 #elif defined (_M_ARM) || defined(__arm__)
-  static CHAR16* Arch = L"arm";
-  static CHAR16* ArchName = L"32-bit ARM";
+  STATIC CHAR16* Arch = L"arm";
+  STATIC CHAR16* ArchName = L"32-bit ARM";
 #elif defined(_M_RISCV64) || (defined (__riscv) && (__riscv_xlen == 64))
-  static CHAR16* Arch = L"riscv64";
-  static CHAR16* ArchName = L"64-bit RISC-V";
+  STATIC CHAR16* Arch = L"riscv64";
+  STATIC CHAR16* ArchName = L"64-bit RISC-V";
 #elif  defined(_M_LOONGARCH64) || defined(__loongarch64)
 static CHAR16* Arch = L"loongarch64";
 static CHAR16* ArchName = L"64-bit LoongArch";
@@ -49,7 +49,7 @@ static CHAR16* ArchName = L"64-bit LoongArch";
 #endif
 
 /* Get the driver name from a driver handle */
-static CHAR16* GetDriverName(CONST EFI_HANDLE DriverHandle)
+STATIC CHAR16* GetDriverName(CONST EFI_HANDLE DriverHandle)
 {
 	CHAR16 *DriverName;
 	EFI_COMPONENT_NAME_PROTOCOL *ComponentName;
@@ -82,7 +82,7 @@ static CHAR16* GetDriverName(CONST EFI_HANDLE DriverHandle)
  * (a.k.a. Modified BSD License, which can be used in GPLv2+ works), found at:
  * https://sourceforge.net/p/cloverefiboot/code/3294/tree/rEFIt_UEFI/refit/main.c#l1271
  */
-static VOID DisconnectBlockingDrivers(VOID) {
+STATIC VOID DisconnectBlockingDrivers(VOID) {
 	EFI_STATUS Status;
 	UINTN HandleCount = 0, Index, OpenInfoIndex, OpenInfoCount;
 	EFI_HANDLE *Handles = NULL;
@@ -131,7 +131,7 @@ static VOID DisconnectBlockingDrivers(VOID) {
 			if ((OpenInfo[OpenInfoIndex].Attributes & EFI_OPEN_PROTOCOL_BY_DRIVER) == EFI_OPEN_PROTOCOL_BY_DRIVER) {
 				Status = gBS->DisconnectController(Handles[Index], OpenInfo[OpenInfoIndex].AgentHandle, NULL);
 				if (EFI_ERROR(Status)) {
-					PrintError(L"  Could not disconnect '%s' on %s",
+					PrintErrorStatus(L"  Could not disconnect '%s' on %s",
 						GetDriverName(OpenInfo[OpenInfoIndex].AgentHandle), DevicePathString);
 				} else {
 					PrintWarning(L"  Disconnected '%s' on %s ",
@@ -148,7 +148,7 @@ static VOID DisconnectBlockingDrivers(VOID) {
 /*
  * Unload an existing file system driver.
  */
-EFI_STATUS UnloadDriver(
+STATIC EFI_STATUS UnloadDriver(
 	CONST EFI_HANDLE FileSystemHandle
 )
 {
@@ -189,7 +189,7 @@ EFI_STATUS UnloadDriver(
 /*
  * Display a centered application banner
  */
-static VOID DisplayBanner(VOID)
+STATIC VOID DisplayBanner(VOID)
 {
 	UINTN i, Len;
 	CHAR16 String[BANNER_LINE_SIZE + 1];
@@ -286,7 +286,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE BaseImageHandle, EFI_SYSTEM_TABLE *SystemT
 	Status = gBS->OpenProtocol(MainImageHandle, &gEfiLoadedImageProtocolGuid,
 		(VOID**)&LoadedImage, MainImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
 	if (EFI_ERROR(Status)) {
-		PrintError(L"Unable to access boot image interface");
+		PrintErrorStatus(L"Unable to access boot image interface");
 		goto out;
 	}
 
@@ -305,7 +305,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE BaseImageHandle, EFI_SYSTEM_TABLE *SystemT
 	Status = gBS->LocateHandleBuffer(ByProtocol, &gEfiDiskIoProtocolGuid,
 		NULL, &HandleCount, &Handles);
 	if (EFI_ERROR(Status)) {
-		PrintError(L"  Failed to list disks");
+		PrintErrorStatus(L"  Failed to list disks");
 		goto out;
 	}
 
@@ -349,7 +349,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE BaseImageHandle, EFI_SYSTEM_TABLE *SystemT
 
 	if (Index >= HandleCount) {
 		Status = EFI_NOT_FOUND;
-		PrintError(L"  Could not locate target partition");
+		PrintErrorStatus(L"  Could not locate target partition");
 		goto out;
 	}
 	PrintInfo(L"Found %s target partition:", FsName[FsType]);
@@ -364,7 +364,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE BaseImageHandle, EFI_SYSTEM_TABLE *SystemT
 
 	// Only handle partitions that are flagged as serviced or needing service
 	if (Status != EFI_SUCCESS && Status != EFI_UNSUPPORTED) {
-		PrintError(L"Could not check for %s service", FsName[FsType]);
+		PrintErrorStatus(L"Could not check for %s service", FsName[FsType]);
 		goto out;
 	}
 
@@ -387,7 +387,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE BaseImageHandle, EFI_SYSTEM_TABLE *SystemT
 		DevicePath = FileDevicePath(LoadedImage->DeviceHandle, DriverPath);
 		if (DevicePath == NULL) {
 			Status = EFI_DEVICE_ERROR;
-			PrintError(L"  Unable to set path for '%s'", DriverPath);
+			PrintErrorStatus(L"  Unable to set path for '%s'", DriverPath);
 			goto out;
 		}
 
@@ -401,7 +401,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE BaseImageHandle, EFI_SYSTEM_TABLE *SystemT
 			// validation errors. Return a much more explicit EFI_SECURITY_VIOLATION then.
 			if ((Status == EFI_ACCESS_DENIED) && (SecureBootStatus >= 1))
 				Status = EFI_SECURITY_VIOLATION;
-			PrintError(L"  Unable to load driver '%s'", DriverPath);
+			PrintErrorStatus(L"  Unable to load driver '%s'", DriverPath);
 			goto out;
 		}
 
@@ -411,19 +411,19 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE BaseImageHandle, EFI_SYSTEM_TABLE *SystemT
 		Status = gBS->OpenProtocol(ImageHandle, &gEfiLoadedImageProtocolGuid,
 			(VOID**)&LoadedImage, MainImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
 		if (EFI_ERROR(Status)) {
-			PrintError(L"  Unable to access driver interface");
+			PrintErrorStatus(L"  Unable to access driver interface");
 			goto out;
 		}
 		if (LoadedImage->ImageCodeType != EfiBootServicesCode) {
 			Status = EFI_LOAD_ERROR;
-			PrintError(L"  '%s' is not a Boot System Driver", DriverPath);
+			PrintErrorStatus(L"  '%s' is not a Boot System Driver", DriverPath);
 			goto out;
 		}
 
 		// Load was a success - attempt to start the driver
 		Status = gBS->StartImage(ImageHandle, NULL, NULL);
 		if (EFI_ERROR(Status)) {
-			PrintError(L"  Unable to start driver");
+			PrintErrorStatus(L"  Unable to start driver");
 			goto out;
 		}
 		PrintInfo(L"  %s", GetDriverName(ImageHandle));
@@ -434,7 +434,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE BaseImageHandle, EFI_SYSTEM_TABLE *SystemT
 		DriverHandleList[1] = NULL;
 		Status = gBS->ConnectController(Handles[Index], DriverHandleList, NULL, TRUE);
 		if (EFI_ERROR(Status)) {
-			PrintError(L"  Could not start %s partition service", FsName[FsType]);
+			PrintErrorStatus(L"  Could not start %s partition service", FsName[FsType]);
 			goto out;
 		}
 	}
@@ -451,7 +451,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE BaseImageHandle, EFI_SYSTEM_TABLE *SystemT
 			(VOID**)&Volume, MainImageHandle, NULL, EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
 		if (!EFI_ERROR(Status))
 			break;
-		PrintError(L"  Could not open partition");
+		PrintErrorStatus(L"  Could not open partition");
 		if (Try >= NUM_RETRIES)
 			goto out;
 		PrintWarning(L"  Waiting %d seconds before retrying...", DELAY);
@@ -462,7 +462,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE BaseImageHandle, EFI_SYSTEM_TABLE *SystemT
 	Root = NULL;
 	Status = Volume->OpenVolume(Volume, &Root);
 	if ((EFI_ERROR(Status)) || (Root == NULL)) {
-		PrintError(L"  Could not open Root directory");
+		PrintErrorStatus(L"  Could not open Root directory");
 		goto out;
 	}
 
@@ -486,7 +486,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE BaseImageHandle, EFI_SYSTEM_TABLE *SystemT
 	// This next call corrects the casing to the required one
 	Status = SetPathCase(Root, LoaderPath);
 	if (EFI_ERROR(Status)) {
-		PrintError(L"  Could not locate '%s'", &LoaderPath[1]);
+		PrintErrorStatus(L"  Could not locate '%s'", &LoaderPath[1]);
 		goto out;
 	}
 
@@ -497,7 +497,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE BaseImageHandle, EFI_SYSTEM_TABLE *SystemT
 	DevicePath = FileDevicePath(Handles[Index], LoaderPath);
 	if (DevicePath == NULL) {
 		Status = EFI_DEVICE_ERROR;
-		PrintError(L"  Could not create path");
+		PrintErrorStatus(L"  Could not create path");
 		goto out;
 	}
 	Status = gBS->LoadImage(FALSE, MainImageHandle, DevicePath, NULL, 0, &ImageHandle);
@@ -505,7 +505,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE BaseImageHandle, EFI_SYSTEM_TABLE *SystemT
 	if (EFI_ERROR(Status)) {
 		if ((Status == EFI_ACCESS_DENIED) && (SecureBootStatus >= 1))
 			Status = EFI_SECURITY_VIOLATION;
-		PrintError(L"  Load failure");
+		PrintErrorStatus(L"  Load failure");
 		goto out;
 	}
 
@@ -532,11 +532,10 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE BaseImageHandle, EFI_SYSTEM_TABLE *SystemT
 		// instance, if the machine has had the BlackLotus UEFI lock enabled and the user
 		// attempts to boot a pre 2023.05 version of the Windows installers.
 		// We therefore take it upon ourselves to report what Windows bootmgr will not report.
-		if (Status == EFI_NO_MAPPING && WindowsBootMgr) {
-			SetText(TEXT_RED); Print(L"[FAIL]"); DefText();
-			Print(L"   Windows bootmgr encountered a security validation or internal error\n");
-		} else
-			PrintError(L"  Start failure");
+		if (Status == EFI_NO_MAPPING && WindowsBootMgr)
+			PrintError(L"  Windows bootmgr encountered a security validation or internal error");
+		else
+			PrintErrorStatus(L"  Start failure");
 	}
 
 out:
