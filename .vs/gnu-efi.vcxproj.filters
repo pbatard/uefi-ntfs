@@ -119,6 +119,9 @@
     <ClCompile Include="..\gnu-efi\lib\aarch64\math.c">
       <Filter>Source Files\aarch64</Filter>
     </ClCompile>
+    <ClCompile Include="..\gnu-efi\lib\va_print.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\gnu-efi\inc\efi.h">

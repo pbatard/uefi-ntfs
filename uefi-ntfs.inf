@@ -53,8 +53,6 @@
   gEfiDiskIo2ProtocolGuid
   gEfiLoadedImageProtocolGuid 
   gEfiSimpleFileSystemProtocolGuid
-  gEfiUnicodeCollationProtocolGuid
-  gEfiUnicodeCollation2ProtocolGuid
 
 [Pcd]
   gEfiMdePkgTokenSpaceGuid.PcdUefiVariableDefaultLang

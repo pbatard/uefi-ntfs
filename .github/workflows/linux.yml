@@ -16,8 +16,9 @@ env:
   GCC5_AARCH64_PREFIX: aarch64-linux-gnu-
   GCC5_RISCV64_PREFIX: riscv64-linux-gnu-
   GCC5_LOONGARCH64_PREFIX: loongarch64-unknown-linux-gnu-
-  LOONGARCH64_TOOLCHAIN_TAG: 2024.11.01
-  LOONGARCH64_TOOLCHAIN_NAME: x86_64-cross-tools-loongarch64-binutils_2.43.1-gcc_14.2.0-glibc_2.40.tar.xz
+  EDK2_STABLE_TAG: edk2-stable202508.01
+  LOONGARCH64_TOOLCHAIN_TAG: 2025.08.08
+  LOONGARCH64_TOOLCHAIN_NAME: x86_64-cross-tools-loongarch64-binutils_2.45-gcc_15.1.0-glibc_2.42.tar.xz
 
 jobs:
   build:
@@ -48,7 +49,7 @@ jobs:
 
     steps:
     - name: Check out repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
 
@@ -73,7 +74,7 @@ jobs:
 
     - name: Set up EDK2
       run: |
-        git clone --recursive https://github.com/tianocore/edk2.git
+        git clone --branch ${EDK2_STABLE_TAG} --recursive https://github.com/tianocore/edk2.git
         make -C edk2/BaseTools
 
     - name: Build UEFI bootloader
