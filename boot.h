@@ -47,7 +47,9 @@
 #include <Protocol/DevicePathToText.h>
 #include <Protocol/DiskIo.h>
 #include <Protocol/DiskIo2.h>
+#include <Protocol/GraphicsOutput.h>
 #include <Protocol/LoadedImage.h>
+#include <Protocol/SimpleTextOut.h>
 
 #include <Guid/FileInfo.h>
 #include <Guid/FileSystemInfo.h>

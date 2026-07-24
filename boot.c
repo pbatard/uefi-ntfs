@@ -194,6 +194,75 @@ STATIC EFI_STATUS UnloadDriver(
 }
 
 /*
+ * Switch the GOP Console resolution to the highest available.
+ */
+STATIC EFI_STATUS SetHighestGOPResolution(VOID)
+{
+	EFI_STATUS Status;
+	EFI_GRAPHICS_OUTPUT_PROTOCOL* Gop = NULL;
+	EFI_GRAPHICS_OUTPUT_MODE_INFORMATION* Info;
+	UINTN SizeOfInfo, Index;
+	UINT32 BestMode = 0;
+	UINT64 BestArea = 0;
+
+	Status = gBS->LocateProtocol(&gEfiGraphicsOutputProtocolGuid, NULL, (VOID**)&Gop);
+	if (EFI_ERROR(Status) || (Gop == NULL))
+		return (Gop == NULL) ? EFI_NOT_FOUND : Status;
+
+	for (Index = 0; Index < Gop->Mode->MaxMode; Index++) {
+		Status = Gop->QueryMode(Gop, (UINT32)Index, &SizeOfInfo, &Info);
+		if (EFI_ERROR(Status))
+			continue;
+		if ((UINT64)Info->HorizontalResolution * Info->VerticalResolution > BestArea) {
+			BestArea = (UINT64)Info->HorizontalResolution * Info->VerticalResolution;
+			BestMode = (UINT32)Index;
+		}
+	}
+
+	if (BestArea == 0)
+		return EFI_NOT_FOUND;
+
+	if (Gop->Mode->Mode != BestMode)
+		Status = Gop->SetMode(Gop, BestMode);
+	return Status;
+}
+
+/*
+ * Switch the console to the highest mode available.
+ */
+STATIC EFI_STATUS SetLargestConsoleMode(VOID)
+{
+	EFI_STATUS Status;
+#ifdef __MAKEWITH_GNUEFI
+	EFI_SIMPLE_TEXT_OUT_PROTOCOL* ConOut;
+#else
+	EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL* ConOut;
+#endif
+	INT32 MaxMode, Mode, BestMode;
+	UINTN BestArea, Rows, Cols;
+
+	ConOut = gST->ConOut;
+	MaxMode = ConOut->Mode->MaxMode;
+	BestMode = ConOut->Mode->Mode;
+	BestArea = 0;
+
+	for (Mode = 0; Mode < MaxMode; Mode++) {
+		Status = ConOut->QueryMode(ConOut, (UINTN)Mode, &Cols, &Rows);
+		if (EFI_ERROR(Status))
+			continue;
+		if (Cols * Rows > BestArea) {
+			BestArea = Cols * Rows;
+			BestMode = Mode;
+		}
+	}
+
+	if (BestMode != ConOut->Mode->Mode)
+		Status = ConOut->SetMode(ConOut, (UINTN)BestMode);
+	ConOut->ClearScreen(ConOut);
+	return EFI_SUCCESS;
+}
+
+/*
  * Display a centered application banner
  */
 STATIC VOID DisplayBanner(VOID)
@@ -275,6 +344,8 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE BaseImageHandle, EFI_SYSTEM_TABLE *SystemT
 #endif
 	MainImageHandle = BaseImageHandle;
 
+	SetHighestGOPResolution();
+	SetLargestConsoleMode();
 	DisplayBanner();
 	PrintSystemInfo();
 	SecureBootStatus = GetSecureBootStatus();
