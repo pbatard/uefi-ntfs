@@ -71,7 +71,7 @@ The way UEFI:NTFS works, in conjunction with Rufus, is as follows:
 
 ## Prerequisites
 
-* [Visual Studio 2022](https://www.visualstudio.com/vs/community/) or
+* [Visual Studio 2026](https://www.visualstudio.com/vs/community/) or
   [MinGW](http://www.mingw.org/)/[MinGW64](http://mingw-w64.sourceforge.net/)
   (preferably installed using [msys2](https://sourceforge.net/projects/msys2/))
   or gcc
@@ -131,12 +131,3 @@ If you create a partition of the same size at the end of your drive and copy
 [`uefi-ntfs.img`](https://github.com/pbatard/rufus/blob/master/res/uefi/uefi-ntfs.img?raw=true)
 there (in DD mode of course), then you should have everything you need to make
 the first NTFS partition on that drive UEFI bootable.
-
-## Visual Studio 2022 and ARM/ARM64 support
-
-Please be mindful that, to enable ARM or ARM64 compilation support in Visual Studio
-2022, you __MUST__ go to the _Individual components_ screen in the setup application
-and select the ARM/ARM64 build tools there, as they do __NOT__ appear in the default
-_Workloads_ screen:
-
-![VS2019 Individual Components](https://files.akeo.ie/pics/VS2019_Individual_Components.png)
