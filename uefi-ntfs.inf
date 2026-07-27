@@ -51,6 +51,7 @@
   gEfiDevicePathToTextProtocolGuid
   gEfiDiskIoProtocolGuid
   gEfiDiskIo2ProtocolGuid
+  gEfiGraphicsOutputProtocolGuid
   gEfiLoadedImageProtocolGuid 
   gEfiSimpleFileSystemProtocolGuid
 

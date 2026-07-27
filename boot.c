@@ -194,6 +194,54 @@ STATIC EFI_STATUS UnloadDriver(
 }
 
 /*
+ * Switch GOP Console res to the highest available mode, if possible.
+ * When chaining windows for example, inherit a larger resolution for the setup screen.
+ * This is a workaround for the fact that Windows setup does not switch to the highest
+ * available resolution on its own, instead, it will use the resolution of the UEFI GOP console.
+ * This is sometimes 800x600 or 1024x768, which is not ideal for modern displays.
+ */
+STATIC VOID SetHighestGopResolution(VOID)
+{
+	EFI_STATUS Status;
+	EFI_GRAPHICS_OUTPUT_PROTOCOL* Gop = NULL;
+	EFI_GRAPHICS_OUTPUT_MODE_INFORMATION* Info;
+	UINTN SizeOfInfo, Index;
+	UINT32 BestMode = 0;
+	UINT64 BestArea = 0;
+
+	Status = gBS->LocateProtocol(&gEfiGraphicsOutputProtocolGuid, NULL, (VOID**)&Gop);
+	if (EFI_ERROR(Status) || (Gop == NULL)) {
+		PrintWarning(L"Could not locate GOP - display resolution will not be changed");
+		return;
+	}
+
+	for (Index = 0; Index < Gop->Mode->MaxMode; Index++) {
+		Status = Gop->QueryMode(Gop, (UINT32)Index, &SizeOfInfo, &Info);
+		if (EFI_ERROR(Status)) {
+			continue;
+		}
+		if ((UINT64)Info->HorizontalResolution * Info->VerticalResolution > BestArea) {
+			BestArea = (UINT64)Info->HorizontalResolution * Info->VerticalResolution;
+			BestMode = (UINT32)Index;
+		}
+	}
+
+	if (BestArea == 0) {
+		PrintWarning(L"No valid GOP mode found - display resolution will not be changed");
+		return;
+	}
+
+	if (Gop->Mode->Mode != BestMode) {
+		PrintInfo(L"Switching GOP console to highest available resolution: %d (%dx%d)", BestMode,
+			Info->HorizontalResolution, Info->VerticalResolution);
+		Status = Gop->SetMode(Gop, BestMode);
+		if (EFI_ERROR(Status)) {
+			PrintWarning(L"Could not set GOP mode %d: %r", BestMode, Status);
+		}
+	}
+}
+
+/*
  * Display a centered application banner
  */
 STATIC VOID DisplayBanner(VOID)
@@ -513,6 +561,11 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE BaseImageHandle, EFI_SYSTEM_TABLE *SystemT
 		PrintErrorStatus(L"  Could not locate '%s'", &LoaderPath[1]);
 		goto out;
 	}
+
+	// Bump the console to its highest GOP res before handing off,
+	// so that windows boot manager / Setup starts at a large resolution
+	// instead of whatever the firmware defaulted to (often 800x600 or 1024x768)
+	SetHighestGopResolution();
 
 	// At this stage, our DevicePath is the partition we are after
 	PrintInfo(L"Launching '%s'...", &LoaderPath[1]);
