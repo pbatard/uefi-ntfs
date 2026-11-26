@@ -61,3 +61,4 @@
 
 [BuildOptions]
   RELEASE_*_*_CC_FLAGS    = -Os -DMDEPKG_NDEBUG -DNDEBUG
+  GCC:*_*_*_DLINK_FLAGS   = -z common-page-size=0x1000

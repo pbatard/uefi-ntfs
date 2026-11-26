@@ -12,21 +12,20 @@ on:
 
 env:
   BUILD_TYPE: RELEASE
-  GCC_ARM_PREFIX: arm-linux-gnueabi-
   GCC_AARCH64_PREFIX: aarch64-linux-gnu-
   GCC_RISCV64_PREFIX: riscv64-linux-gnu-
   GCC_LOONGARCH64_PREFIX: loongarch64-unknown-linux-gnu-
-  EDK2_STABLE_TAG: edk2-stable202508.01
-  LOONGARCH64_TOOLCHAIN_TAG: 2025.08.08
-  LOONGARCH64_TOOLCHAIN_NAME: x86_64-cross-tools-loongarch64-binutils_2.45-gcc_15.1.0-glibc_2.42.tar.xz
+  EDK2_STABLE_TAG: edk2-stable202611
+  LOONGARCH64_TOOLCHAIN_TAG: 2026.10.13
+  LOONGARCH64_TOOLCHAIN_NAME: x86_64-cross-tools-loongarch64-binutils_2.47-gcc_16.2.0-glibc_2.44.tar.xz
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        arch: [X64, IA32, AARCH64, ARM, RISCV64, LOONGARCH64]
+        arch: [X64, IA32, AARCH64, RISCV64, LOONGARCH64]
         include:
         - arch: X64
           short: x64
@@ -37,9 +36,6 @@ jobs:
         - arch: AARCH64
           short: aa64
           pkgs: gcc-aarch64-linux-gnu python3-setuptools uuid-dev
-        - arch: ARM
-          short: arm
-          pkgs: gcc-arm-linux-gnueabi python3-setuptools uuid-dev
         - arch: RISCV64
           short: riscv64
           pkgs: gcc-riscv64-linux-gnu python3-setuptools uuid-dev
@@ -49,7 +45,7 @@ jobs:
 
     steps:
     - name: Check out repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
       with:
         fetch-depth: 0
 
