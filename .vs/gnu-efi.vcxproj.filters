@@ -95,9 +95,6 @@
     <ClCompile Include="..\gnu-efi\lib\error.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\gnu-efi\lib\arm\math.c">
-      <Filter>Source Files\arm</Filter>
-    </ClCompile>
     <ClCompile Include="..\gnu-efi\lib\x86_64\math.c">
       <Filter>Source Files\x86_64</Filter>
     </ClCompile>
@@ -109,9 +106,6 @@
     </ClCompile>
     <ClCompile Include="..\gnu-efi\lib\ia32\initplat.c">
       <Filter>Source Files\ia32</Filter>
-    </ClCompile>
-    <ClCompile Include="..\gnu-efi\lib\arm\initplat.c">
-      <Filter>Source Files\arm</Filter>
     </ClCompile>
     <ClCompile Include="..\gnu-efi\lib\aarch64\initplat.c">
       <Filter>Source Files\aarch64</Filter>
